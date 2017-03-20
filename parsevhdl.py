@@ -447,8 +447,6 @@ design_file ::= design_unit <#design_unit> { design_unit <#design_unit> }
 
 design_unit ::= context_clause <#context_clause> library_unit <#library_unit>
 
-designator ::= identifier <#identifier>  |  operator_symbol <#operator_symbol>
-
 disconnection_specification ::=
 	*DISCONNECT* guarded_signal_specification <#guarded_signal_specification> *AFTER* time_expression <#expression> *;*
 
@@ -505,6 +503,85 @@ entity_header = (
 	Optional(port_clause)
 )
 
+designator = identifier | operator_symbol
+
+formal_parameter_list = interface_list
+
+subprogram_specification = (
+	( Keyword('PROCEDURE') + designator + Optional(Literal('(') + formal_parameter_list + Literal(')')) ) |
+	( Optional(Keyword('PURE') | Keyword('IMPURE')) + Keyword('FUNCTION') + designator + Optional( Literal('(') + formal_parameter_list + Literal(')') ) + Keyword('RETURN') + type_mark )
+    )
+
+subprogram_declaration = subprogram_specification + Literal(';')
+
+subprogram_declarative_item = Forward()
+
+subprogram_declarative_part = ZeroOrMore(subprogram_declarative_item)
+
+wait_statement = Optional(label + Literal(':')) + Keyword('WAIT') + Optional(sensitivity_clause) + Optional(condition_clause) + Optional(timeout_clause) + Literal(';')
+
+sequential_statement = (
+	wait_statement
+	| assertion_statement
+	| report_statement
+	| signal_assignment_statement
+	| variable_assignment_statement
+	| procedure_call_statement
+	| if_statement
+	| case_statement
+	| loop_statement
+	| next_statement
+	| exit_statement
+	| return_statement
+	| null_statement
+    )
+
+subprogram_statement_part = ZeroOrMore(sequential_statement)
+
+subprogram_body = (
+	subprogram_specification + Keyword('IS') +
+		subprogram_declarative_part +
+	Keyword('BEGIN') +
+		subprogram_statement_part +
+	Keyword('END') + Optional(subprogram_kind) + Optional( designator ) + Literal(';')
+    )
+
+subprogram_declarative_item << (
+	subprogram_declaration
+	| subprogram_body
+	| type_declaration
+	| subtype_declaration
+	| constant_declaration
+	| variable_declaration
+	| file_declaration
+	| alias_declaration
+	| attribute_declaration
+	| attribute_specification
+	| use_clause
+	| group_template_declaration
+	| group_declaration
+    )
+
+entity_declarative_item = (
+	subprogram_declaration
+	| subprogram_body
+	| type_declaration
+	| subtype_declaration
+	| constant_declaration
+	| signal_declaration
+	| shared_variable_declaration
+	| file_declaration
+	| alias_declaration
+	| attribute_declaration
+	| attribute_specification
+	| disconnection_specification
+	| use_clause
+	| group_template_declaration
+	| group_declaration
+    )
+
+entity_declarative_part = ZeroOrMore(entity_declarative_item)
+
 entity_declaration = (
     Keyword('ENTITY') + identifier + Keyword('IS') +
 		entity_header +
@@ -514,26 +591,6 @@ entity_declaration = (
 )
 
 '''
-entity_declarative_item ::=
-	subprogram_declaration <#subprogram_declaration>
-	| subprogram_body <#subprogram_body>
-	| type_declaration <#type_declaration>
-	| subtype_declaration <#subtype_declaration>
-	| constant_declaration <#constant_declaration>
-	| signal_declaration <#signal_declaration>
-	| shared_variable_declaration <#variable_declaration>
-	| file_declaration <#file_declaration>
-	| alias_declaration <#alias_declaration>
-	| attribute_declaration <#attribute_declaration>
-	| attribute_specification <#attribute_specification>
-	| disconnection_specification <#disconnection_specification>
-	| use_clause <#use_clause>
-	| group_template_declaration <#group_template_declaration>
-	| group_declaration <#group_declaration>
-
-entity_declarative_part ::=
-	{ entity_declarative_item <#entity_declarative_item> }
-
 entity_designator ::= entity_tag <#entity_tag> [ signature <#signature> ]
 '''
 
@@ -579,8 +636,6 @@ file_type_definition ::=
 	*FILE*  *OF* type_mark <#type_mark>
 
 floating_type_definition ::=  range_constraint <#range_constraint>
-
-formal_parameter_list ::= parameter_interface_list <#interface_list>
 
 full_type_declaration ::=
 	*TYPE* identifier <#identifier> *IS* type_definition <#type_definition> *;*
@@ -825,21 +880,6 @@ sensitivity_list ::= signal_name <#name> { *,* signal_name <#name> }
 sequence_of_statements ::=
 	{ sequential_statement <#sequential_statement> }
 
-sequential_statement ::=
-	wait_statement <#wait_statement>
-	| assertion_statement <#assertion_statement>
-	| report_statement <#report_statement>
-	| signal_assignment_statement <#signal_assignment_statement>
-	| variable_assignment_statement <#variable_assignment_statement>
-	| procedure_call_statement <#procedure_call_statement>
-	| if_statement <#if_statement>
-	| case_statement <#case_statement>
-	| loop_statement <#loop_statement>
-	| next_statement <#next_statement>
-	| exit_statement <#exit_statement>
-	| return_statement <#return_statement>
-	| null_statement <#null_statement>
-
 signal_assignment_statement ::=
 	[ label <#label> *:* ] target <#target> *<=* [ delay_mechanism <#delay_mechanism> ] waveform <#waveform> *;*
 
@@ -853,43 +893,7 @@ signal_list ::=
 	| *OTHERS*
 	| *ALL*
 
-subprogram_body ::=
-	subprogram_specification <#subprogram_specification> *IS*
-		subprogram_declarative_part <#subprogram_declarative_part>
-	*BEGIN*
-		subprogram_statement_part <#subprogram_statement_part>
-	*END* [ subprogram_kind <#subprogram_kind> ] [ designator <#designator> ] *;*
-
-subprogram_declaration ::=
-	subprogram_specification <#subprogram_specification> *;*
-
-subprogram_declarative_item ::=
-	subprogram_declaration <#subprogram_declaration>
-	| subprogram_body <#subprogram_body>
-	| type_declaration <#type_declaration>
-	| subtype_declaration <#subtype_declaration>
-	| constant_declaration <#constant_declaration>
-	| variable_declaration <#variable_declaration>
-	| file_declaration <#file_declaration>
-	| alias_declaration <#alias_declaration>
-	| attribute_declaration <#attribute_declaration>
-	| attribute_specification <#attribute_specification>
-	| use_clause <#use_clause>
-	| group_template_declaration <#group_template_declaration>
-	| group_declaration <#group_declaration>
-
-subprogram_declarative_part ::=
-	{ subprogram_declarative_item <#subprogram_declarative_item> }
-
 subprogram_kind ::= *PROCEDURE* | *FUNCTION*
-
-subprogram_specification ::=
-	*PROCEDURE* designator <#designator> [ *(* formal_parameter_list <#formal_parameter_list> *)* ]
-	| [ *PURE* | *IMPURE* ]  *FUNCTION* designator <#designator> [ *(* formal_parameter_list <#formal_parameter_list> *)* ]
-		*RETURN* type_mark <#type_mark>
-
-subprogram_statement_part ::=
-	{ sequential_statement <#sequential_statement> }
 
 subtype_declaration ::=
 	*SUBTYPE* identifier <#identifier> *IS* subtype_indication <#subtype_indication> *;*
@@ -922,9 +926,6 @@ variable_assignment_statement ::=
 
 variable_declaration ::=
 	[ *SHARED* ] *VARIABLE* identifier_list <#identifier_list> *:* subtype_indication <#subtype_indication> [ *:=* expression <#expression> ] *;*
-
-wait_statement ::=
-	[ label <#label> *:* ] *WAIT* [ sensitivity_clause <#sensitivity_clause> ] [ condition_clause <#condition_clause> ] [ timeout_clause <#timeout_clause> ] *;*
 
 waveform ::=
 	waveform_element <#waveform_element> { *,* waveform_element <#waveform_element> }
