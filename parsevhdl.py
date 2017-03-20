@@ -30,6 +30,8 @@ extended_identifier = Word(printables)
 identifier = basic_identifier | extended_identifier
 string_literal = dblQuotedString
 sign = oneOf('+ -')
+label = identifier
+
 
 identifier_list = delimitedList(identifier)
 
@@ -246,13 +248,6 @@ architecture_statement_part ::=
 array_type_definition ::=
 	unconstrained_array_definition <#unconstrained_array_definition>	|   constrained_array_definition <#constrained_array_definition>
 
-assertion ::=
-	*ASSERT* condition <#condition>
-		[ *REPORT* expression <#expression> ]
-		[ *SEVERITY* expression <#expression> ]
-
-assertion_statement ::=	 [ label <#label> *:* ] assertion <#assertion> *;*
-
 attribute_declaration ::=
 	*ATTRIBUTE* identifier <#identifier> *:* type_mark <#type_mark> *;*
 
@@ -380,10 +375,6 @@ concurrent_statement ::=
 	| component_instantiation_statement <#component_instantiation_statement>
 	| generate_statement <#generate_statement>
 
-condition ::= boolean_expression <#expression>
-
-condition_clause ::= *UNTIL* condition <#condition>
-
 conditional_signal_assignment ::=
 	target <#target>	*<=* options <#options> conditional_waveforms <#conditional_waveforms> *;*
 
@@ -438,10 +429,6 @@ declaration ::=
 	| configuration_declaration <#configuration_declaration>
 	| subprogram_declaration <#subprogram_declaration>
 	| package_declaration <#package_declaration>
-
-delay_mechanism ::=
-	*TRANSPORT*
-	| [ *REJECT* time_expression <#expression> ] *INERTIAL*
 
 design_file ::= design_unit <#design_unit> { design_unit <#design_unit> }
 
@@ -518,9 +505,64 @@ subprogram_declarative_item = Forward()
 
 subprogram_declarative_part = ZeroOrMore(subprogram_declarative_item)
 
+sensitivity_list = delimitedList(name)
+
+sensitivity_clause = Keyword('ON') + sensitivity_list
+
+condition = expression
+
+condition_clause = Keyword('UNTIL') + condition
+
+timeout_clause = Keyword('FOR') + expression
+
 wait_statement = Optional(label + Literal(':')) + Keyword('WAIT') + Optional(sensitivity_clause) + Optional(condition_clause) + Optional(timeout_clause) + Literal(';')
 
-sequential_statement = (
+assertion = (
+	Keyword('ASSERT') + condition +
+		Optional(Keyword('REPORT') + expression) +
+		Optional(Keyword('SEVERITY') + expression)
+        )
+
+assertion_statement = Optional(label + Literal(':')) + assertion + Literal(';')
+
+report_statement = (
+	Optional(label + Literal(':')) +
+		Keyword('REPORT') + expression +
+			Optional(Keyword('SEVERITY') + expression) + Literal(';')
+            )
+
+target = name | aggregate
+
+delay_mechanism = Keyword('TRANSPORT') | (Optional(Keyword('REJECT') + expression) + Keyword('INERTIAL'))
+
+waveform_element = (expression + Optional(Keyword('AFTER') + expression)) | (Keyword('NULL') + Optional(Keyword('AFTER') + expression))
+
+waveform = delimitedList(waveform_element) | Keyword('UNAFFECTED')
+
+signal_assignment_statement = Optional(label + Literal(':')) + target + Keyword('<=') + Optional(delay_mechanism) + waveform + Literal(';')
+
+variable_assignment_statement = target + Keyword(':=') + expression + Literal(';')
+
+procedure_call = name + Optional( Literal('(') + actual_parameter_part + Literal(')') )
+
+procedure_call_statement = Optional(label + Literal(':')) + procedure_call + Literal(';')
+
+sequential_statement = Forward()
+
+sequence_of_statements = ZeroOrMore(sequential_statement)
+
+if_statement = (
+	Optional(label + Literal(':')) +
+		Keyword('IF') + condition + Keyword('THEN') +
+			sequence_of_statements +
+		ZeroOrMore( Keyword('ELSIF') + condition + Keyword('THEN') +
+			sequence_of_statements ) +
+		Optional(Keyword('ELSE') +
+			sequence_of_statements) +
+		Keyword('END') + Keyword('IF') + Optional(label) + Literal(';')
+        )
+
+sequential_statement << (
 	wait_statement
 	| assertion_statement
 	| report_statement
@@ -670,16 +712,6 @@ guarded_signal_specification ::=
 '''
 
 '''
-if_statement ::=
-	[ if_label <#label> *:* ]
-		*IF* condition <#condition> *THEN*
-			sequence_of_statements <#sequence_of_statements>
-		{ *ELSIF* condition <#condition> *THEN*
-			sequence_of_statements <#sequence_of_statements> }
-		[ *ELSE*
-			sequence_of_statements <#sequence_of_statements> ]
-		*END* *IF* [ if_label <#label> ] *;*
-
 incomplete_type_declaration ::=	 *TYPE* identifier <#identifier> *;*
 
 index_specification ::=
@@ -703,8 +735,6 @@ integer_type_definition ::= range_constraint <#range_constraint>
 iteration_scheme ::=
 	*WHILE* condition <#condition>
 	| *FOR* loop_parameter_specification <#parameter_specification>
-
-label ::= identifier <#identifier>
 
 letter ::= upper_case_letter | lower_case_letter
 
@@ -807,11 +837,6 @@ primary_unit ::=
 	| configuration_declaration <#configuration_declaration>
 	| package_declaration <#package_declaration>
 
-procedure_call ::= procedure_name <#name> [ *(* actual_parameter_part <#actual_parameter_part> *)* ]
-
-procedure_call_statement ::=
-	[ label <#label> *:* ] procedure_call <#procedure_call> *;*
-
 process_declarative_item ::=
 	subprogram_declaration <#subprogram_declaration>
 	| subprogram_body <#subprogram_body>
@@ -847,11 +872,6 @@ record_type_definition ::=
 		{ element_declaration <#element_declaration> }
 	*END* *RECORD* [ record_type_simple_name <#simple_name> ]
 
-report_statement ::=
-	[ label <#label> *:* ]
-		*REPORT* expression <#expression>
-			[ *SEVERITY* expression <#expression> ] *;*
-
 return_statement ::=
 	[ label <#label> *:* ] *RETURN* [ expression <#expression> ] *;*
 
@@ -873,16 +893,6 @@ selected_waveforms ::=
 	{ waveform <#waveform> *WHEN* choices <#choices> *,* }
 	waveform <#waveform> *WHEN* choices <#choices>
 
-sensitivity_clause ::=	*ON* sensitivity_list <#sensitivity_list>
-
-sensitivity_list ::= signal_name <#name> { *,* signal_name <#name> }
-
-sequence_of_statements ::=
-	{ sequential_statement <#sequential_statement> }
-
-signal_assignment_statement ::=
-	[ label <#label> *:* ] target <#target> *<=* [ delay_mechanism <#delay_mechanism> ] waveform <#waveform> *;*
-
 signal_declaration ::=
 	signal identifier_list <#identifier_list> *:* subtype_indication <#subtype_indication> [ signal_kind <#signal_kind> ] [ *:=* expression <#expression> ] *;*
 
@@ -897,12 +907,6 @@ subprogram_kind ::= *PROCEDURE* | *FUNCTION*
 
 subtype_declaration ::=
 	*SUBTYPE* identifier <#identifier> *IS* subtype_indication <#subtype_indication> *;*
-
-target ::=
-	name <#name>
-	| aggregate <#aggregate>
-
-timeout_clause ::= *FOR* time_expression <#expression>
 
 type_declaration ::=
 	full_type_declaration <#full_type_declaration>
@@ -921,19 +925,9 @@ unconstrained_array_definition ::=
 use_clause ::=
 	*USE* selected_name <#selected_name> { *,* selected_name <#selected_name> } *;*
 
-variable_assignment_statement ::=
-	[ label <#label> *:* ] target <#target>  *:=* expression <#expression> *;*
-
 variable_declaration ::=
 	[ *SHARED* ] *VARIABLE* identifier_list <#identifier_list> *:* subtype_indication <#subtype_indication> [ *:=* expression <#expression> ] *;*
 
-waveform ::=
-	waveform_element <#waveform_element> { *,* waveform_element <#waveform_element> }
-	| *UNAFFECTED*
-
-waveform_element ::=
-	value_expression <#expression> [ *AFTER* time_expression <#expression> ]
-	| *NULL* [ *AFTER* time_expression <#expression> ]
 '''
 
 if __name__ == '__main__':
