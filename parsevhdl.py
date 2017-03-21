@@ -225,13 +225,6 @@ subtype_indication << Optional(name) + type_mark + Optional( constraint )
 
 
 '''
-access_type_definition ::= *ACCESS* subtype_indication <#subtype_indication>
-
-alias_declaration ::=
-	*ALIAS* alias_designator <#alias_designator> [ *:* subtype_indication <#subtype_indication> ] *IS* name <#name> [ signature <#signature> ] 	*;*
-
-alias_designator ::= identifier <#identifier> | character_literal <#character_literal> | operator_symbol <#operator_symbol>
-
 architecture_body ::=
 	*ARCHITECTURE* identifier <#identifier> *OF* entity_name <#name> *IS*
 		architecture_declarative_part <#architecture_declarative_part>
@@ -244,17 +237,6 @@ architecture_declarative_part ::=
 
 architecture_statement_part ::=
 	{ concurrent_statement <#concurrent_statement> }
-
-array_type_definition ::=
-	unconstrained_array_definition <#unconstrained_array_definition>	|   constrained_array_definition <#constrained_array_definition>
-
-attribute_declaration ::=
-	*ATTRIBUTE* identifier <#identifier> *:* type_mark <#type_mark> *;*
-
-attribute_specification ::=
-	*ATTRIBUTE* attribute_designator <#attribute_designator> *OF* entity_specification <#entity_specification> *IS* expression <#expression> *;*
-
-base_unit_declaration ::= identifier <#identifier> *;*
 
 basic_character ::=
 	basic_graphic_character <#basic_graphic_character> | format_effector
@@ -319,17 +301,6 @@ block_statement ::=
 block_statement_part ::=
 	{ concurrent_statement <#concurrent_statement> }
 
-case_statement ::=
-	[ case_label <#label> *:* ]
-		*CASE* expression <#expression> *IS*
-			case_statement_alternative <#case_statement_alternative>
-			{ case_statement_alternative <#case_statement_alternative> }
-		*END* *CASE* [ case_label <#label> ] *;*
-
-case_statement_alternative ::=
-	*WHEN* choices <#choices> *=>*
-		sequence_of_statements <#sequence_of_statements>
-
 component_configuration ::=
 	*FOR* component_specification <#component_specification>
 		[ binding_indication <#binding_indication> *;* ]
@@ -350,10 +321,6 @@ component_instantiation_statement ::=
 
 component_specification ::=
 	instantiation_list <#instantiation_list> *:* component_name <#name>
-
-composite_type_definition ::=
-	array_type_definition <#array_type_definition>
-	| record_type_definition <#record_type_definition>
 
 concurrent_assertion_statement ::=
 	[ label <#label> *:* ] [ *POSTPONED* ] assertion <#assertion> *;*
@@ -403,12 +370,6 @@ configuration_item ::=
 configuration_specification ::=
 	*FOR* component_specification <#component_specification> binding_indication <#binding_indication> *;*
 
-constant_declaration ::=
-	*CONSTANT* identifier_list <#identifier_list> *:* subtype_indication <#subtype_indication> [ *:=* expression <#expression> ] *;*
-
-constrained_array_definition ::=
-	*ARRAY* index_constraint <#index_constraint> *OF* element_subtype_indication <#subtype_indication>
-
 context_clause ::= { context_item <#context_item> }
 
 context_item ::=
@@ -437,28 +398,11 @@ design_unit ::= context_clause <#context_clause> library_unit <#library_unit>
 disconnection_specification ::=
 	*DISCONNECT* guarded_signal_specification <#guarded_signal_specification> *AFTER* time_expression <#expression> *;*
 
-element_declaration ::=
-	identifier_list <#identifier_list> *:* element_subtype_definition <#element_subtype_definition> *;*
-
-element_subtype_definition ::= subtype_indication <#subtype_indication>
-
 entity_aspect ::=
 	  *ENTITY* entity_name <#name> [ *(* architecture_identifier*)* ]
 	| *CONFIGURATION* configuration_name <#name>
 	| *OPEN*
 
-entity_class ::=
-	*ENTITY*	     | *ARCHITECTURE*  | *CONFIGURATION*
-	| *PROCEDURE*  | *FUNCTION*	     | *PACKAGE*
-	| *TYPE*	     | *SUBTYPE*	     | *CONSTANT*
-	| *SIGNAL*     | *VARIABLE*	     | *COMPONENT*
-	| *LABEL*	     | *LITERAL*	     | *UNITS*
-	| *GROUP*	     | *FILE*
-
-entity_class_entry ::=	entity_class <#entity_class> [ *<>* ]
-
-entity_class_entry_list ::=
-	entity_class_entry <#entity_class_entry> { *,* entity_class_entry <#entity_class_entry> }
 '''
 interface_constant_declaration = Optional(Keyword('CONSTANT')) + identifier_list + Literal(':') + Optional(Keyword('IN')) + subtype_indication + Optional( Literal(':=') + expression )
 
@@ -562,6 +506,36 @@ if_statement = (
 		Keyword('END') + Keyword('IF') + Optional(label) + Literal(';')
         )
 
+case_statement_alternative = (
+	Keyword('WHEN') + choices + Keyword('=>') +
+		sequence_of_statements )
+
+case_statement = (
+	Optional(label + Literal(':') ) +
+		Keyword('CASE') + expression + Keyword('IS') +
+			OneOrMore(case_statement_alternative) +
+		Keyword('END') + Keyword('CASE') + Optional( label ) + Literal(';')
+        )
+
+parameter_specification = identifier + Keyword('IN') + discrete_range
+
+iteration_scheme = (Keyword('WHILE') + condition) | (Keyword('FOR') + parameter_specification)
+
+loop_statement = (
+	Optional(label + Literal(':') ) +
+		Optional( iteration_scheme ) + Keyword('LOOP') +
+			sequence_of_statements +
+		Keyword('END') + Keyword('LOOP') + Optional(label) + Literal(';')
+        )
+
+next_statement = Optional(label + Literal(':')) + Keyword('NEXT') + Optional(label) + Optional(Keyword('WHEN') + condition) + Literal(';')
+
+exit_statement = Optional(label + Literal(':')) + Keyword('EXIT') + Optional(label) + Optional(Keyword('WHEN') + condition) + Literal(';')
+
+return_statement = Optional(label + Literal(':')) + Keyword('RETURN') + Optional(expression) + Literal(';')
+
+null_statement = Optional(label + Literal(':')) + Keyword('NULL') + Literal(';')
+
 sequential_statement << (
 	wait_statement
 	| assertion_statement
@@ -580,6 +554,8 @@ sequential_statement << (
 
 subprogram_statement_part = ZeroOrMore(sequential_statement)
 
+subprogram_kind = Keyword('PROCEDURE') | Keyword('FUNCTION')
+
 subprogram_body = (
 	subprogram_specification + Keyword('IS') +
 		subprogram_declarative_part +
@@ -587,6 +563,117 @@ subprogram_body = (
 		subprogram_statement_part +
 	Keyword('END') + Optional(subprogram_kind) + Optional( designator ) + Literal(';')
     )
+
+enumeration_type_definition = Literal('(') + delimitedList(enumeration_literal) + Literal(')')
+
+integer_type_definition = range_constraint
+
+floating_type_definition = range_constraint
+
+base_unit_declaration = identifier + Literal(';')
+
+secondary_unit_declaration = identifier + Literal('=') + physical_literal + Literal(';')
+
+physical_type_definition = (
+	range_constraint +
+		Keyword('UNITS') +
+			base_unit_declaration +
+			ZeroOrMore(secondary_unit_declaration) +
+		Keyword('END') + Keyword('UNITS') + Optional(simple_name)
+        )
+
+scalar_type_definition = enumeration_type_definition | integer_type_definition | floating_type_definition | physical_type_definition
+
+index_subtype_definition = type_mark + range_ + Literal('<>')
+
+unconstrained_array_definition = (
+	Keyword('ARRAY') + Literal('(') + delimitedList(index_subtype_definition) + Literal(')') +
+		Keyword('OF') + subtype_indication
+        )
+
+constrained_array_definition = Keyword('ARRAY') + index_constraint + Keyword('OF') + subtype_indication
+
+array_type_definition = unconstrained_array_definition | constrained_array_definition
+
+element_subtype_definition = subtype_indication
+
+element_declaration = identifier_list + Literal(':') + element_subtype_definition + Literal(';')
+
+record_type_definition = (
+	Keyword('RECORD') +
+		OneOrMore(element_declaration) +
+	Keyword('END') + Keyword('RECORD') + Optional(simple_name)
+    )
+
+composite_type_definition = array_type_definition | record_type_definition
+
+access_type_definition = Keyword('ACCESS') + subtype_indication
+
+file_type_definition = Keyword('FILE') + Keyword('OF') + type_mark
+
+type_definition = (
+	scalar_type_definition
+	| composite_type_definition
+	| access_type_definition
+	| file_type_definition
+    )
+
+full_type_declaration = Keyword('TYPE') + identifier + Keyword('IS') + type_definition + Literal(';')
+
+incomplete_type_declaration = Keyword('TYPE') + identifier + Literal(';')
+
+type_declaration = full_type_declaration | incomplete_type_declaration
+
+subtype_declaration = Keyword('SUBTYPE') + identifier + Keyword('IS') + subtype_indication + Literal(';')
+
+constant_declaration = Keyword('CONSTANT') + identifier_list + Literal(':') + subtype_indication + Optional(Keyword(':=') + expression) + Literal(';')
+
+variable_declaration = Optional(Keyword('SHARED')) + Keyword('VARIABLE') + identifier_list + Literal(':') + subtype_indication + Optional(Keyword(':=') + expression) + Literal(';')
+
+file_logical_name = expression
+
+file_open_information = Optional(Keyword('OPEN') + expression) + Keyword('IS') + file_logical_name
+
+file_declaration = Keyword('FILE') + identifier_list + Literal(':') + subtype_indication + Optional(file_open_information) + Literal(';')
+
+alias_designator = identifier | character_literal | operator_symbol
+
+alias_declaration = Keyword('ALIAS') + alias_designator + Optional(Literal(':') + subtype_indication) + Keyword('IS') + name + Optional(signature) + Literal(';')
+
+attribute_declaration = Keyword('ATTRIBUTE') + identifier + Literal(':') + type_mark + Literal(';')
+
+entity_tag = simple_name | character_literal | operator_symbol
+
+entity_designator = entity_tag + Optional(signature)
+
+entity_name_list = delimitedList(entity_designator) | Keyword('OTHERS') | Keyword('ALL')
+
+entity_class = (
+	Keyword('ENTITY')	     | Keyword('ARCHITECTURE')  | Keyword('CONFIGURATION')
+	| Keyword('PROCEDURE')  | Keyword('FUNCTION')	     | Keyword('PACKAGE')
+	| Keyword('TYPE')	     | Keyword('SUBTYPE')	     | Keyword('CONSTANT')
+	| Keyword('SIGNAL')     | Keyword('VARIABLE')	     | Keyword('COMPONENT')
+	| Keyword('LABEL')	     | Keyword('LITERAL')	     | Keyword('UNITS')
+	| Keyword('GROUP')	     | Keyword('FILE')
+    )
+
+entity_specification = entity_name_list + Literal(':') + entity_class
+
+attribute_specification = Keyword('ATTRIBUTE') + attribute_designator + Keyword('OF') + entity_specification + Keyword('IS') + expression + Literal(';')
+
+use_clause = Keyword('USE') + delimitedList(selected_name) + Literal(';')
+
+entity_class_entry = entity_class + Optional(Literal('<>'))
+
+entity_class_entry_list = delimitedList(entity_class_entry)
+
+group_template_declaration = Keyword('GROUP') + identifier + Keyword('IS') + Literal('(') + entity_class_entry_list + Literal(')') + Literal(';')
+
+group_constituent = name | character_literal
+
+group_constituent_list = delimitedList(group_constituent)
+
+group_declaration = Keyword('GROUP') + identifier + Literal(':') + name + Literal('(') + group_constituent_list + Literal(')') + Literal(';')
 
 subprogram_declarative_item << (
 	subprogram_declaration
@@ -633,18 +720,6 @@ entity_declaration = (
 )
 
 '''
-entity_designator ::= entity_tag <#entity_tag> [ signature <#signature> ]
-'''
-
-'''
-entity_name_list ::=
-	entity_designator <#entity_designator> { *,* entity_designator <#entity_designator> }
-	| *OTHERS*
-	| *ALL*
-
-entity_specification ::=
-	entity_name_list <#entity_name_list> *:* entity_class <#entity_class>
-
 entity_statement ::=
 	concurrent_assertion_statement <#concurrent_assertion_statement>
 	| passive_concurrent_procedure_call_statement <#concurrent_procedure_call_statement>
@@ -653,35 +728,11 @@ entity_statement ::=
 entity_statement_part ::=
 	{ entity_statement <#entity_statement> }
 
-entity_tag ::=	simple_name <#simple_name> | character_literal <#character_literal> | operator_symbol <#operator_symbol>
-
-enumeration_type_definition ::=
-	*(* enumeration_literal <#enumeration_literal> { *,* enumeration_literal <#enumeration_literal> } *)*
-
-exit_statement ::=
-	[ label <#label> *:* ] *EXIT* [ loop_label <#label> ] [ *WHEN* condition <#condition> ] *;*
-
 
 '''
 
 
 '''
-file_declaration ::=
-	*FILE* identifier_list <#identifier_list> *:* subtype_indication <#subtype_indication> file_open_information <#file_open_information> ] *;*
-
-file_logical_name ::= string_expression <#expression>
-
-file_open_information ::=
-	[ *OPEN* file_open_kind_expression <#expression> ] *IS* file_logical_name <#file_logical_name>
-
-file_type_definition ::=
-	*FILE*  *OF* type_mark <#type_mark>
-
-floating_type_definition ::=  range_constraint <#range_constraint>
-
-full_type_declaration ::=
-	*TYPE* identifier <#identifier> *IS* type_definition <#type_definition> *;*
-
 generate_statement ::=
 	generate_label <#label> *:*
 		generation_scheme <#generation_scheme> *GENERATE*
@@ -697,28 +748,14 @@ generation_scheme ::=
 generic_map_aspect ::=
 	*GENERIC* *MAP* *(* generic_association_list <#association_list> *)*
 
-group_constituent ::= name <#name> | character_literal <#character_literal>
-
-group_constituent_list ::= group_constituent <#group_constituent> { *,* group_constituent <#group_constituent> }
-
-group_template_declaration ::=
-	*GROUP* identifier <#identifier> *IS* *(* entity_class_entry_list <#entity_class_entry_list> *)* *;*
-
-group_declaration ::=
-	*GROUP* identifier <#identifier> *:* group_template_name <#name> *(* group_constituent_list <#group_constituent_list> *)* *;*
-
 guarded_signal_specification ::=
 	guarded_signal_list <#signal_list> *:* type_mark <#type_mark>
 '''
 
 '''
-incomplete_type_declaration ::=	 *TYPE* identifier <#identifier> *;*
-
 index_specification ::=
 	discrete_range <#discrete_range>
 	| static_expression <#expression>
-
-index_subtype_definition ::= type_mark <#type_mark> range <#range> <>
 
 instantiated_unit ::=
 	[ *COMPONENT* ] component_name <#name>
@@ -729,12 +766,6 @@ instantiation_list ::=
 	instantiation_label <#label> { *,* instantiation_label <#label> }
 	| *OTHERS*
 	| *ALL*
-
-integer_type_definition ::= range_constraint <#range_constraint>
-
-iteration_scheme ::=
-	*WHILE* condition <#condition>
-	| *FOR* loop_parameter_specification <#parameter_specification>
 
 letter ::= upper_case_letter | lower_case_letter
 
@@ -752,18 +783,7 @@ logical_name_list ::= logical_name <#logical_name> { *,* logical_name <#logical_
 
 logical_operator ::= *AND* | *OR* | *NAND* | *NOR* | *XOR* | *XNOR*
 
-loop_statement ::=
-	[ loop_label <#label> *:* ]
-		[ iteration_scheme <#iteration_scheme> ] *LOOP*
-			sequence_of_statements <#sequence_of_statements>
-		*END* *LOOP* [ loop_label <#label> ] *;*
-
 miscellaneous_operator ::= **** | *ABS* | *NOT*
-
-next_statement ::=
-	[ label <#label> *:* ] *NEXT* [ loop_label <#label> ] [ *WHEN* condition <#condition> ] *;*
-
-null_statement ::= [ label <#label> *:* ] *NULL* *;*
 
 object_declaration ::=
 	constant_declaration <#constant_declaration>
@@ -819,16 +839,6 @@ package_declarative_item ::=
 package_declarative_part ::=
 	{ package_declarative_item <#package_declarative_item> }
 
-parameter_specification ::=
-	identifier <#identifier> *IN* discrete_range <#discrete_range>
-
-physical_type_definition ::=
-	range_constraint <#range_constraint>
-		*UNITS*
-			base_unit_declaration <#base_unit_declaration>
-			{ secondary_unit_declaration <#secondary_unit_declaration> }
-		*END* *UNITS* [ physical_type_simple_name <#simple_name> ]
-
 port_map_aspect ::=
 	*PORT* *MAP* *(* port_association_list <#association_list> *)*
 
@@ -866,24 +876,9 @@ process_statement ::=
 process_statement_part ::=
 	{ sequential_statement <#sequential_statement> }
 
-record_type_definition ::=
-	*RECORD*
-		element_declaration <#element_declaration>
-		{ element_declaration <#element_declaration> }
-	*END* *RECORD* [ record_type_simple_name <#simple_name> ]
-
-return_statement ::=
-	[ label <#label> *:* ] *RETURN* [ expression <#expression> ] *;*
-
-scalar_type_definition ::=
-	enumeration_type_definition <#enumeration_type_definition>   | integer_type_definition <#integer_type_definition>
-	| floating_type_definition <#floating_type_definition>	  | physical_type_definition <#physical_type_definition>
-
 secondary_unit ::=
 	architecture_body <#architecture_body>
 	| package_body <#package_body>
-
-secondary_unit_declaration ::=	identifier <#identifier> = physical_literal <#physical_literal> *;*
 
 selected_signal_assignment ::=
 	*WITH* expression <#expression> *SELECT*
@@ -902,31 +897,6 @@ signal_list ::=
 	signal_name <#name> { *,* signal_name <#name> }
 	| *OTHERS*
 	| *ALL*
-
-subprogram_kind ::= *PROCEDURE* | *FUNCTION*
-
-subtype_declaration ::=
-	*SUBTYPE* identifier <#identifier> *IS* subtype_indication <#subtype_indication> *;*
-
-type_declaration ::=
-	full_type_declaration <#full_type_declaration>
-	| incomplete_type_declaration <#incomplete_type_declaration>
-
-type_definition ::=
-	scalar_type_definition <#scalar_type_definition>
-	| composite_type_definition <#composite_type_definition>
-	| access_type_definition <#access_type_definition>
-	| file_type_definition <#file_type_definition>
-
-unconstrained_array_definition ::=
-	*ARRAY* *(* index_subtype_definition <#index_subtype_definition> { *,* index_subtype_definition <#index_subtype_definition> } *)*
-		*OF* element_subtype_indication <#subtype_indication>
-
-use_clause ::=
-	*USE* selected_name <#selected_name> { *,* selected_name <#selected_name> } *;*
-
-variable_declaration ::=
-	[ *SHARED* ] *VARIABLE* identifier_list <#identifier_list> *:* subtype_indication <#subtype_indication> [ *:=* expression <#expression> ] *;*
 
 '''
 
