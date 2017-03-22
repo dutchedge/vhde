@@ -225,19 +225,6 @@ subtype_indication << Optional(name) + type_mark + Optional( constraint )
 
 
 '''
-architecture_body ::=
-	*ARCHITECTURE* identifier <#identifier> *OF* entity_name <#name> *IS*
-		architecture_declarative_part <#architecture_declarative_part>
-	*BEGIN*
-		architecture_statement_part <#architecture_statement_part>
-	*END* [ *ARCHITECTURE* ] [ architecture_simple_name <#simple_name> ] *;*
-
-architecture_declarative_part ::=
-	{ block_declarative_item <#block_declarative_item> }
-
-architecture_statement_part ::=
-	{ concurrent_statement <#concurrent_statement> }
-
 basic_character ::=
 	basic_graphic_character <#basic_graphic_character> | format_effector
 
@@ -245,103 +232,22 @@ basic_character ::=
 
 
 '''
-binding_indication ::=
-	[ *USE* entity_aspect <#entity_aspect> ]
-	[ generic_map_aspect <#generic_map_aspect> ]
-	[ port_map_aspect <#port_map_aspect> ]
-
 block_configuration ::=
 	*FOR* block_specification <#block_specification>
 		{ use_clause <#use_clause> }
 		{ configuration_item <#configuration_item> }
 	*END FOR ;*
 
-block_declarative_item ::=
-	subprogram_declaration <#subprogram_declaration>
-	| subprogram_body <#subprogram_body>
-	| type_declaration <#type_declaration>
-	| subtype_declaration <#subtype_declaration>
-	| constant_declaration <#constant_declaration>
-	| signal_declaration <#signal_declaration>
-	| shared_variable_declaration <#variable_declaration>
-	| file_declaration <#file_declaration>
-	| alias_declaration <#alias_declaration>
-	| component_declaration <#component_declaration>
-	| attribute_declaration <#attribute_declaration>
-	| attribute_specification <#attribute_specification>
-	| configuration_specification <#configuration_specification>
-	| disconnection_specification <#disconnection_specification>
-	| use_clause <#use_clause>
-	| group_template_declaration <#group_template_declaration>
-	| group_declaration <#group_declaration>
-
-block_declarative_part ::=
-	{ block_declarative_item <#block_declarative_item> }
-
-block_header ::=
-	[ generic_clause <#generic_clause>
-	[ generic_map_aspect <#generic_map_aspect> *;* ] ]
-	[ port_clause <#port_clause>
-	[ port_map_aspect <#port_map_aspect> *;* ] ]
-
 block_specification ::=
 	architecture_name <#name>
 	| block_statement_label <#label>
 	| generate_statement_label <#label> [ *(* index_specification <#index_specification> *)* ]
-
-block_statement ::=
-	block_label <#label> *:*
-		*BLOCK* [ *(* guard_expression <#expression> *)* ] [ *IS* ]
-			block_header <#block_header>
-			block_declarative_part <#block_declarative_part>
-		*BEGIN*
-			block_statement_part <#block_statement_part>
-		*END BLOCK* [ block_label <#label> ] *;*
-
-block_statement_part ::=
-	{ concurrent_statement <#concurrent_statement> }
 
 component_configuration ::=
 	*FOR* component_specification <#component_specification>
 		[ binding_indication <#binding_indication> *;* ]
 		[ block_configuration <#block_configuration> ]
 	*END* *FOR* *;*
-
-component_declaration ::=
-	*COMPONENT* identifier <#identifier> [ *IS* ]
-		[ local_generic_clause ]
-		[ local_port_clause <#port_clause> ]
-	*END* *COMPONENT* [ component_simple_name <#simple_name> ] *;*
-
-component_instantiation_statement ::=
-	instantiation_label <#label> *:*
-		instantiated_unit <#instantiated_unit>
-			[ generic_map_aspect <#generic_map_aspect> ]
-			[ port_map_aspect <#port_map_aspect> ] *;*
-
-component_specification ::=
-	instantiation_list <#instantiation_list> *:* component_name <#name>
-
-concurrent_signal_assignment_statement ::=
-	  [ label <#label> *:* ] [ *POSTPONED* ] conditional_signal_assignment <#conditional_signal_assignment>
-	| [ label <#label> *:* ] [ *POSTPONED* ] selected_signal_assignment <#selected_signal_assignment>
-
-concurrent_statement ::=
-	block_statement <#block_statement>
-	| process_statement <#process_statement>
-	| concurrent_procedure_call_statement <#concurrent_procedure_call_statement>
-	| concurrent_assertion_statement <#concurrent_assertion_statement>
-	| concurrent_signal_assignment_statement
-<#concurrent_signal_assignment_statement>
-	| component_instantiation_statement <#component_instantiation_statement>
-	| generate_statement <#generate_statement>
-
-conditional_signal_assignment ::=
-	target <#target>	*<=* options <#options> conditional_waveforms <#conditional_waveforms> *;*
-
-conditional_waveforms ::=
-	{ waveform <#waveform> *WHEN* condition <#condition> *ELSE* }
-	waveform <#waveform> [ *WHEN* condition <#condition> ]
 
 configuration_declaration ::=
 	*CONFIGURATION* identifier <#identifier> *OF* entity_name <#name> *IS*
@@ -360,9 +266,6 @@ configuration_declarative_part ::=
 configuration_item ::=
 	block_configuration <#block_configuration>
 	| component_configuration <#component_configuration>
-
-configuration_specification ::=
-	*FOR* component_specification <#component_specification> binding_indication <#binding_indication> *;*
 
 context_clause ::= { context_item <#context_item> }
 
@@ -388,11 +291,6 @@ declaration ::=
 design_file ::= design_unit <#design_unit> { design_unit <#design_unit> }
 
 design_unit ::= context_clause <#context_clause> library_unit <#library_unit>
-
-entity_aspect ::=
-	  *ENTITY* entity_name <#name> [ *(* architecture_identifier*)* ]
-	| *CONFIGURATION* configuration_name <#name>
-	| *OPEN*
 
 '''
 interface_constant_declaration = Optional(Keyword('CONSTANT')) + identifier_list + Literal(':') + Optional(Keyword('IN')) + subtype_indication + Optional( Literal(':=') + expression )
@@ -757,43 +655,156 @@ entity_declaration = (
 	Keyword('END') + Optional( Keyword('ENTITY') ) + Optional( simple_name ) + Literal(';')
 )
 
-'''
+component_declaration = (
+	Keyword('COMPONENT') + identifier + Optional(Keyword('IS')) +
+		Optional(generic_clause) +
+		Optional(port_clause) +
+	Keyword('END') + Keyword('COMPONENT') + Optional(simple_name) + Literal(';')
+    )
 
-'''
+instantiation_list = delimitedList(label) | Keyword('OTHERS') | Keyword('ALL')
 
+component_specification = instantiation_list + Literal(':') + name
 
-'''
-generate_statement ::=
-	generate_label <#label> *:*
-		generation_scheme <#generation_scheme> *GENERATE*
-			[ { block_declarative_item <#block_declarative_item> }
-		*BEGIN* ]
-			{ concurrent_statement <#concurrent_statement> }
-		*END* *GENERATE* [ generate_label <#label> ] *;*
+entity_aspect = (
+	  (Keyword('ENTITY') + name + Optional( Literal('(') + identifier + Literal(')') ))
+	| (Keyword('CONFIGURATION') + name)
+	| Keyword('OPEN')
+    )
 
-generation_scheme ::=
-	*FOR* generate_parameter_specification <#parameter_specification>
-	| *IF* condition <#condition>
+generic_map_aspect = Keyword('GENERIC') + Keyword('MAP') + Literal('(') + association_list + Literal(')')
 
-generic_map_aspect ::=
-	*GENERIC* *MAP* *(* generic_association_list <#association_list> *)*
+port_map_aspect = Keyword('PORT') + Keyword('MAP') + Literal('(') + association_list + Literal(')')
 
-'''
+binding_indication = (
+	Optional( Keyword('USE') + entity_aspect ) +
+	Optional( generic_map_aspect ) +
+	Optional( port_map_aspect )
+        )
+
+configuration_specification = Keyword('FOR') + component_specification + binding_indication + Literal(';')
+
+block_declarative_item = (
+	subprogram_declaration
+	| subprogram_body
+	| type_declaration
+	| subtype_declaration
+	| constant_declaration
+	| signal_declaration
+	| variable_declaration
+	| file_declaration
+	| alias_declaration
+	| component_declaration
+	| attribute_declaration
+	| attribute_specification
+	| configuration_specification
+	| disconnection_specification
+	| use_clause
+	| group_template_declaration
+	| group_declaration
+    )
+
+architecture_declarative_part = ZeroOrMore(block_declarative_item)
+
+block_header = (
+	Optional(generic_clause +
+	         Optional(generic_map_aspect + Literal(';'))) +
+	Optional(port_clause +
+             Optional(port_map_aspect + Literal(';')))
+    )
+
+block_declarative_part = ZeroOrMore(block_declarative_item)
+
+concurrent_statement = Forward()
+
+block_statement_part = ZeroOrMore(concurrent_statement)
+
+block_statement = (
+    label + Literal(':') +
+		Keyword('BLOCK') + Optional( Literal('(') + expression + Literal(')') ) + Optional(Keyword('IS')) +
+			block_header +
+			block_declarative_part +
+		Keyword('BEGIN') +
+			block_statement_part +
+		Keyword('END') + Keyword('BLOCK') + Optional(label) + Literal(';')
+        )
+
+options = Optional(Keyword('GUARDED')) + Optional(delay_mechanism)
+
+conditional_waveforms = (
+	ZeroOrMore( waveform + Keyword('WHEN') + condition + Keyword('ELSE') ) +
+	waveform + Optional(Keyword('WHEN') + condition)
+    )
+
+conditional_signal_assignment = target + Keyword('<=') + options + conditional_waveforms + Literal(';')
+
+selected_waveforms = (
+	ZeroOrMore(waveform + Keyword('WHEN') + choices + Literal(',')) +
+	waveform + Keyword('WHEN') + choices
+    )
+
+selected_signal_assignment = (
+	Keyword('WITH') + expression + Keyword('SELECT') +
+		target + Keyword('<=') + options + selected_waveforms + Literal(';')
+        )
+
+concurrent_signal_assignment_statement = (
+	  (Optional(label + Literal(':')) + Optional(Keyword('POSTPONED')) + conditional_signal_assignment)
+	| (Optional(label + Literal(':')) + Optional(Keyword('POSTPONED')) + selected_signal_assignment)
+    )
+
+instantiated_unit = (
+	(Optional(Keyword('COMPONENT')) + name)
+	| (Keyword('ENTITY') + name + Optional( Literal('(') + identifier + Literal(')') ))
+	| (Keyword('CONFIGURATION') + name)
+    )
+
+component_instantiation_statement = (
+	label + Literal(':') +
+		instantiated_unit +
+			Optional(generic_map_aspect) +
+			Optional(port_map_aspect) + Literal(';')
+            )
+
+generation_scheme = (
+	(Keyword('FOR') + parameter_specification)
+	| (Keyword('IF') + condition)
+    )
+
+generate_statement = (
+	label + Literal(':') +
+		generation_scheme + Keyword('GENERATE') +
+			Optional( ZeroOrMore(block_declarative_item) +
+		Keyword('BEGIN')) +
+			ZeroOrMore(concurrent_statement) +
+		Keyword('END') + Keyword('GENERATE') + Optional(label) + Literal(';')
+        )
+
+concurrent_statement << (
+	block_statement
+	| process_statement
+	| concurrent_procedure_call_statement
+	| concurrent_assertion_statement
+	| concurrent_signal_assignment_statement
+	| component_instantiation_statement
+	| generate_statement
+    )
+
+architecture_statement_part = ZeroOrMore(concurrent_statement)
+
+architecture_body = (
+	Keyword('ARCHITECTURE') + identifier + Keyword('OF') + name + Keyword('IS') +
+		architecture_declarative_part +
+	Keyword('BEGIN') +
+		architecture_statement_part +
+	Keyword('END') + Optional(Keyword('ARCHITECTURE')) + Optional(simple_name) + Literal(';')
+    )
+
 
 '''
 index_specification ::=
 	discrete_range <#discrete_range>
 	| static_expression <#expression>
-
-instantiated_unit ::=
-	[ *COMPONENT* ] component_name <#name>
-	| *ENTITY* entity_name <#name> [ *(* architecture_identifier *)* ]
-	| *CONFIGURATION* configuration_name <#name>
-
-instantiation_list ::=
-	instantiation_label <#label> { *,* instantiation_label <#label> }
-	| *OTHERS*
-	| *ALL*
 
 letter ::= upper_case_letter | lower_case_letter
 
@@ -818,8 +829,6 @@ object_declaration ::=
 	| signal_declaration <#signal_declaration>
 	| variable_declaration <#variable_declaration>
 	| file_declaration <#file_declaration>
-
-options ::= [ *GUARDED* ] [ delay_mechanism <#delay_mechanism> ]
 
 package_body ::=
 	*PACKAGE* body package_simple_name <#simple_name> *IS*
@@ -867,9 +876,6 @@ package_declarative_item ::=
 package_declarative_part ::=
 	{ package_declarative_item <#package_declarative_item> }
 
-port_map_aspect ::=
-	*PORT* *MAP* *(* port_association_list <#association_list> *)*
-
 primary_unit ::=
 	entity_declaration <#entity_declaration>
 	| configuration_declaration <#configuration_declaration>
@@ -878,14 +884,6 @@ primary_unit ::=
 secondary_unit ::=
 	architecture_body <#architecture_body>
 	| package_body <#package_body>
-
-selected_signal_assignment ::=
-	*WITH* expression <#expression> *SELECT*
-		target <#target>	*<=* options <#options> selected_waveforms <#selected_waveforms> *;*
-
-selected_waveforms ::=
-	{ waveform <#waveform> *WHEN* choices <#choices> *,* }
-	waveform <#waveform> *WHEN* choices <#choices>
 
 '''
 
