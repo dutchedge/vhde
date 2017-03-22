@@ -56,9 +56,6 @@ physical_literal = Optional(abstract_literal) + name
 
 numeric_literal = abstract_literal | physical_literal
 
-#basic_graphic_character = upper_case_letter | digit | special_character| space_character
-#graphic_character = basic_graphic_character | lower_case_letter | other_special_character
-
 character_literal = Combine(Literal("'") + Word(printables, max = 1) + Literal("'"))
 
 enumeration_literal = identifier | character_literal
@@ -224,75 +221,6 @@ constraint = range_constraint | index_constraint
 subtype_indication << Optional(name) + type_mark + Optional( constraint )
 
 
-'''
-basic_character ::=
-	basic_graphic_character <#basic_graphic_character> | format_effector
-
-'''
-
-
-'''
-block_configuration ::=
-	*FOR* block_specification <#block_specification>
-		{ use_clause <#use_clause> }
-		{ configuration_item <#configuration_item> }
-	*END FOR ;*
-
-block_specification ::=
-	architecture_name <#name>
-	| block_statement_label <#label>
-	| generate_statement_label <#label> [ *(* index_specification <#index_specification> *)* ]
-
-component_configuration ::=
-	*FOR* component_specification <#component_specification>
-		[ binding_indication <#binding_indication> *;* ]
-		[ block_configuration <#block_configuration> ]
-	*END* *FOR* *;*
-
-configuration_declaration ::=
-	*CONFIGURATION* identifier <#identifier> *OF* entity_name <#name> *IS*
-		configuration_declarative_part <#configuration_declarative_part>
-		block_configuration <#block_configuration>
-	*END* [ *CONFIGURATION* ] [ configuration_simple_name <#simple_name> ] *;*
-
-configuration_declarative_item ::=
-	use_clause <#use_clause>
-	| attribute_specification <#attribute_specification>
-	| group_declaration <#group_declaration>
-
-configuration_declarative_part ::=
-	{ configuration_declarative_item <#configuration_declarative_item> }
-
-configuration_item ::=
-	block_configuration <#block_configuration>
-	| component_configuration <#component_configuration>
-
-context_clause ::= { context_item <#context_item> }
-
-context_item ::=
-	library_clause <#library_clause>
-	| use_clause <#use_clause>
-
-declaration ::=
-	type_declaration <#type_declaration>
-	| subtype_declaration <#subtype_declaration>
-	| object_declaration <#object_declaration>
-	| interface_declaration <#interface_declaration>
-	| alias_declaration <#alias_declaration>
-	| attribute_declaration <#attribute_declaration>
-	| component_declaration <#component_declaration>
-	| group_template_declaration <#group_template_declaration>
-	| group_declaration <#group_declaration>
-	| entity_declaration <#entity_declaration>
-	| configuration_declaration <#configuration_declaration>
-	| subprogram_declaration <#subprogram_declaration>
-	| package_declaration <#package_declaration>
-
-design_file ::= design_unit <#design_unit> { design_unit <#design_unit> }
-
-design_unit ::= context_clause <#context_clause> library_unit <#library_unit>
-
-'''
 interface_constant_declaration = Optional(Keyword('CONSTANT')) + identifier_list + Literal(':') + Optional(Keyword('IN')) + subtype_indication + Optional( Literal(':=') + expression )
 
 interface_signal_declaration = Optional(Keyword('SIGNAL')) + identifier_list + Literal(':') + Optional(mode) + subtype_indication + Optional(Keyword('BUS')) + Optional(Literal(':=') + expression)
@@ -655,12 +583,15 @@ entity_declaration = (
 	Keyword('END') + Optional( Keyword('ENTITY') ) + Optional( simple_name ) + Literal(';')
 )
 
-component_declaration = (
-	Keyword('COMPONENT') + identifier + Optional(Keyword('IS')) +
-		Optional(generic_clause) +
-		Optional(port_clause) +
-	Keyword('END') + Keyword('COMPONENT') + Optional(simple_name) + Literal(';')
-    )
+configuration_declarative_item = use_clause | attribute_specification | group_declaration
+
+configuration_declarative_part = ZeroOrMore(configuration_declarative_item)
+
+index_specification = discrete_range | expression
+
+block_specification = name | label | (label + Optional(Literal('(') + index_specification + Literal(')')))
+
+block_configuration = Forward()
 
 instantiation_list = delimitedList(label) | Keyword('OTHERS') | Keyword('ALL')
 
@@ -681,6 +612,68 @@ binding_indication = (
 	Optional( generic_map_aspect ) +
 	Optional( port_map_aspect )
         )
+
+component_configuration = (
+	Keyword('FOR') + component_specification +
+		Optional(binding_indication + Literal(';')) +
+		Optional(block_configuration) +
+	Keyword('END') + Keyword('FOR') + Literal(';')
+    )
+
+configuration_item = block_configuration | component_configuration
+
+block_configuration << (
+	Keyword('FOR') + block_specification +
+		ZeroOrMore(use_clause) +
+		ZeroOrMore(configuration_item) +
+	Keyword('END') + Keyword('FOR') + Literal(';')
+    )
+
+configuration_declaration = (
+	Keyword('CONFIGURATION') + identifier + Keyword('OF') + name + Keyword('IS') +
+		configuration_declarative_part +
+		block_configuration +
+	Keyword('END') + Optional('CONFIGURATION') + Optional(simple_name) + Literal(';')
+    )
+
+component_declaration = (
+	Keyword('COMPONENT') + identifier + Optional(Keyword('IS')) +
+		Optional(generic_clause) +
+		Optional(port_clause) +
+	Keyword('END') + Keyword('COMPONENT') + Optional(simple_name) + Literal(';')
+    )
+
+package_declarative_item = (
+	subprogram_declaration
+	| type_declaration
+	| subtype_declaration
+	| constant_declaration
+	| signal_declaration
+	| variable_declaration
+	| file_declaration
+	| alias_declaration
+	| component_declaration
+	| attribute_declaration
+	| attribute_specification
+	| disconnection_specification
+	| use_clause
+	| group_template_declaration
+	| group_declaration
+    )
+
+package_declarative_part = ZeroOrMore(package_declarative_item)
+
+package_declaration = (
+	Keyword('PACKAGE') + identifier + Keyword('IS') +
+		package_declarative_part +
+	Keyword('END') + Optional(Keyword('PACKAGE')) + Optional(simple_name) + Literal(';')
+    )
+
+primary_unit = (
+	entity_declaration
+	| configuration_declaration
+	| package_declaration
+    )
 
 configuration_specification = Keyword('FOR') + component_specification + binding_indication + Literal(';')
 
@@ -800,25 +793,71 @@ architecture_body = (
 	Keyword('END') + Optional(Keyword('ARCHITECTURE')) + Optional(simple_name) + Literal(';')
     )
 
+package_body_declarative_item = (
+	subprogram_declaration
+	| subprogram_body
+	| type_declaration
+	| subtype_declaration
+	| constant_declaration
+	| variable_declaration
+	| file_declaration
+	| alias_declaration
+	| use_clause
+	| group_template_declaration
+	| group_declaration
+    )
+
+package_body_declarative_part = ZeroOrMore(package_body_declarative_item)
+
+package_body = (
+	Keyword('PACKAGE') + Keyword('BODY') + simple_name + Keyword('IS') +
+		package_body_declarative_part +
+	Keyword('END') + Optional(Keyword('PACKAGE') + Keyword('BODY')) + Optional(simple_name) + Literal(';')
+    )
+
+secondary_unit = architecture_body | package_body
+
+library_unit = primary_unit | secondary_unit
+
+logical_name = identifier
+
+logical_name_list = delimitedList(logical_name)
+
+library_clause = Keyword('LIBRARY') + logical_name_list + Literal(';')
+
+context_item = library_clause | use_clause
+
+context_clause = ZeroOrMore(context_item)
+
+design_unit = context_clause + library_unit
+
+design_file = OneOrMore(design_unit)
 
 '''
-index_specification ::=
-	discrete_range <#discrete_range>
-	| static_expression <#expression>
+basic_graphic_character = upper_case_letter | digit | special_character| space_character
+graphic_character = basic_graphic_character | lower_case_letter | other_special_character
+
+basic_character ::=
+	basic_graphic_character <#basic_graphic_character> | format_effector
+
+declaration ::=
+	type_declaration <#type_declaration>
+	| subtype_declaration <#subtype_declaration>
+	| object_declaration <#object_declaration>
+	| interface_declaration <#interface_declaration>
+	| alias_declaration <#alias_declaration>
+	| attribute_declaration <#attribute_declaration>
+	| component_declaration <#component_declaration>
+	| group_template_declaration <#group_template_declaration>
+	| group_declaration <#group_declaration>
+	| entity_declaration <#entity_declaration>
+	| configuration_declaration <#configuration_declaration>
+	| subprogram_declaration <#subprogram_declaration>
+	| package_declaration <#package_declaration>
 
 letter ::= upper_case_letter | lower_case_letter
 
 letter_or_digit ::= letter <#letter> | digit
-
-library_clause ::= *LIBRARY* logical_name_list <#logical_name_list> *;*
-
-library_unit ::=
-	primary_unit <#primary_unit>
-	| secondary_unit <#secondary_unit>
-
-logical_name ::= identifier <#identifier>
-
-logical_name_list ::= logical_name <#logical_name> { *,* logical_name <#logical_name> }
 
 logical_operator ::= *AND* | *OR* | *NAND* | *NOR* | *XOR* | *XNOR*
 
@@ -830,65 +869,10 @@ object_declaration ::=
 	| variable_declaration <#variable_declaration>
 	| file_declaration <#file_declaration>
 
-package_body ::=
-	*PACKAGE* body package_simple_name <#simple_name> *IS*
-		package_body_declarative_part <#package_body_declarative_part>
-	*END* [ *PACKAGE* *BODY* ] [ package_simple_name <#simple_name> ] *;*
-
-package_body_declarative_item ::=
-	subprogram_declaration <#subprogram_declaration>
-	| subprogram_body <#subprogram_body>
-	| type_declaration <#type_declaration>
-	| subtype_declaration <#subtype_declaration>
-	| constant_declaration <#constant_declaration>
-	| shared_variable_declaration <#variable_declaration>
-	| file_declaration <#file_declaration>
-	| alias_declaration <#alias_declaration>
-	| use_clause <#use_clause>
-	| group_template_declaration <#group_template_declaration>
-	| group_declaration <#group_declaration>
-
-package_body_declarative_part ::=
-	{ package_body_declarative_item <#package_body_declarative_item> }
-
-package_declaration ::=
-	*PACKAGE* identifier <#identifier> *IS*
-		package_declarative_part <#package_declarative_part>
-	*END* [ *PACKAGE* ] [ package_simple_name <#simple_name> ] *;*
-
-package_declarative_item ::=
-	subprogram_declaration <#subprogram_declaration>
-	| type_declaration <#type_declaration>
-	| subtype_declaration <#subtype_declaration>
-	| constant_declaration <#constant_declaration>
-	| signal_declaration <#signal_declaration>
-	| shared_variable_declaration <#variable_declaration>
-	| file_declaration <#file_declaration>
-	| alias_declaration <#alias_declaration>
-	| component_declaration <#component_declaration>
-	| attribute_declaration <#attribute_declaration>
-	| attribute_specification <#attribute_specification>
-	| disconnection_specification <#disconnection_specification>
-	| use_clause <#use_clause>
-	| group_template_declaration <#group_template_declaration>
-	| group_declaration <#group_declaration>
-
-package_declarative_part ::=
-	{ package_declarative_item <#package_declarative_item> }
-
-primary_unit ::=
-	entity_declaration <#entity_declaration>
-	| configuration_declaration <#configuration_declaration>
-	| package_declaration <#package_declaration>
-
-secondary_unit ::=
-	architecture_body <#architecture_body>
-	| package_body <#package_body>
-
 '''
 
 if __name__ == '__main__':
-    entity_declaration.parseFile('dinges.vhd')
+    design_file.parseFile('dinges.vhd')
 
 
 
