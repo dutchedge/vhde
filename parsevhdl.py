@@ -322,12 +322,6 @@ component_instantiation_statement ::=
 component_specification ::=
 	instantiation_list <#instantiation_list> *:* component_name <#name>
 
-concurrent_assertion_statement ::=
-	[ label <#label> *:* ] [ *POSTPONED* ] assertion <#assertion> *;*
-
-concurrent_procedure_call_statement ::=
-	[ label <#label> *:* ] [ *POSTPONED* ] procedure_call <#procedure_call> *;*
-
 concurrent_signal_assignment_statement ::=
 	  [ label <#label> *:* ] [ *POSTPONED* ] conditional_signal_assignment <#conditional_signal_assignment>
 	| [ label <#label> *:* ] [ *POSTPONED* ] selected_signal_assignment <#selected_signal_assignment>
@@ -394,9 +388,6 @@ declaration ::=
 design_file ::= design_unit <#design_unit> { design_unit <#design_unit> }
 
 design_unit ::= context_clause <#context_clause> library_unit <#library_unit>
-
-disconnection_specification ::=
-	*DISCONNECT* guarded_signal_specification <#guarded_signal_specification> *AFTER* time_expression <#expression> *;*
 
 entity_aspect ::=
 	  *ENTITY* entity_name <#name> [ *(* architecture_identifier*)* ]
@@ -691,6 +682,16 @@ subprogram_declarative_item << (
 	| group_declaration
     )
 
+signal_kind = Keyword('REGISTER') | Keyword('BUS')
+
+signal_declaration = Keyword('signal') + identifier_list + Literal(':') + subtype_indication + Optional(signal_kind) + Optional(Keyword(':=') + expression) + Literal(';')
+
+signal_list = delimitedList(name) | Keyword('OTHERS') | Keyword('ALL')
+
+guarded_signal_specification = signal_list + Literal(':') + type_mark
+
+disconnection_specification = Keyword('DISCONNECT') + guarded_signal_specification + Keyword('AFTER') + expression + Literal(';')
+
 entity_declarative_item = (
 	subprogram_declaration
 	| subprogram_body
@@ -698,7 +699,7 @@ entity_declarative_item = (
 	| subtype_declaration
 	| constant_declaration
 	| signal_declaration
-	| shared_variable_declaration
+	| variable_declaration
 	| file_declaration
 	| alias_declaration
 	| attribute_declaration
@@ -711,23 +712,52 @@ entity_declarative_item = (
 
 entity_declarative_part = ZeroOrMore(entity_declarative_item)
 
+concurrent_assertion_statement = Optional(label + Literal(':')) + Optional(Keyword('POSTPONED')) + assertion + Literal(';')
+
+concurrent_procedure_call_statement = Optional(label + Literal(':')) + Optional(Keyword('POSTPONED')) + procedure_call + Literal(';')
+
+process_declarative_item = (
+	subprogram_declaration
+	| subprogram_body
+	| type_declaration
+	| subtype_declaration
+	| constant_declaration
+	| variable_declaration
+	| file_declaration
+	| alias_declaration
+	| attribute_declaration
+	| attribute_specification
+	| use_clause
+	| group_template_declaration
+	| group_declaration
+    )
+
+process_declarative_part = ZeroOrMore(process_declarative_item)
+
+process_statement_part = ZeroOrMore(sequential_statement)
+
+process_statement = (
+    Optional( label + Literal(':') ) +
+		Optional(Keyword('POSTPONED')) + Keyword('PROCESS') + Optional( Literal('(') + sensitivity_list + Literal(')')) + Optional(Keyword('IS')) +
+			process_declarative_part +
+		Keyword('BEGIN') +
+			process_statement_part +
+		Keyword('END') + Optional(Keyword('POSTPONED')) + Keyword('PROCESS') + Optional(label) + Literal(';')
+        )
+
+entity_statement = concurrent_assertion_statement | concurrent_procedure_call_statement | process_statement
+
+entity_statement_part = ZeroOrMore(entity_statement)
+
 entity_declaration = (
     Keyword('ENTITY') + identifier + Keyword('IS') +
 		entity_header +
         entity_declarative_part +
         Optional( Keyword('BEGIN') + entity_statement_part ) +
-	Keyword('END') + Optional( Keyword('ENTITY') ) + Optional( entity_simple_name ) + Literal(';')
+	Keyword('END') + Optional( Keyword('ENTITY') ) + Optional( simple_name ) + Literal(';')
 )
 
 '''
-entity_statement ::=
-	concurrent_assertion_statement <#concurrent_assertion_statement>
-	| passive_concurrent_procedure_call_statement <#concurrent_procedure_call_statement>
-	| passive_process_statement <#process_statement>
-
-entity_statement_part ::=
-	{ entity_statement <#entity_statement> }
-
 
 '''
 
@@ -748,8 +778,6 @@ generation_scheme ::=
 generic_map_aspect ::=
 	*GENERIC* *MAP* *(* generic_association_list <#association_list> *)*
 
-guarded_signal_specification ::=
-	guarded_signal_list <#signal_list> *:* type_mark <#type_mark>
 '''
 
 '''
@@ -847,35 +875,6 @@ primary_unit ::=
 	| configuration_declaration <#configuration_declaration>
 	| package_declaration <#package_declaration>
 
-process_declarative_item ::=
-	subprogram_declaration <#subprogram_declaration>
-	| subprogram_body <#subprogram_body>
-	| type_declaration <#type_declaration>
-	| subtype_declaration <#subtype_declaration>
-	| constant_declaration <#constant_declaration>
-	| variable_declaration <#variable_declaration>
-	| file_declaration <#file_declaration>
-	| alias_declaration <#alias_declaration>
-	| attribute_declaration <#attribute_declaration>
-	| attribute_specification <#attribute_specification>
-	| use_clause <#use_clause>
-	| group_template_declaration <#group_template_declaration>
-	| group_declaration <#group_declaration>
-
-process_declarative_part ::=
-	{ process_declarative_item <#process_declarative_item> }
-
-process_statement ::=
-	[ process_label <#label> *:* ]
-		[ *POSTPONED* ] *PROCESS* [ *(* sensitivity_list <#sensitivity_list> *)* ] [ *IS* ]
-			process_declarative_part <#process_declarative_part>
-		*BEGIN*
-			process_statement_part <#process_statement_part>
-		*END* [ *POSTPONED* ] *PROCESS* [ process_label <#label> ] *;*
-
-process_statement_part ::=
-	{ sequential_statement <#sequential_statement> }
-
 secondary_unit ::=
 	architecture_body <#architecture_body>
 	| package_body <#package_body>
@@ -887,16 +886,6 @@ selected_signal_assignment ::=
 selected_waveforms ::=
 	{ waveform <#waveform> *WHEN* choices <#choices> *,* }
 	waveform <#waveform> *WHEN* choices <#choices>
-
-signal_declaration ::=
-	signal identifier_list <#identifier_list> *:* subtype_indication <#subtype_indication> [ signal_kind <#signal_kind> ] [ *:=* expression <#expression> ] *;*
-
-signal_kind ::=	 *REGISTER*  |  *BUS*
-
-signal_list ::=
-	signal_name <#name> { *,* signal_name <#name> }
-	| *OTHERS*
-	| *ALL*
 
 '''
 
