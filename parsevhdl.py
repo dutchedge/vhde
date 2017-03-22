@@ -32,9 +32,7 @@ string_literal = dblQuotedString
 sign = oneOf('+ -')
 label = identifier
 
-
 identifier_list = delimitedList(identifier)
-
 
 integer = Word(nums, nums + '_')
 
@@ -76,26 +74,16 @@ literal = (
 adding_operator = oneOf('+ - &')
 multiplying_operator = oneOf('* / MOD REM')
 
-direction = Keyword('TO') | Keyword('DOWNTO')
+direction = CaselessKeyword('TO') | CaselessKeyword('DOWNTO')
 
-shift_operator = Keyword('SLL') | Keyword('SRL') | Keyword('SLA') | Keyword('SRA') | Keyword('ROL') | Keyword('ROR')
+shift_operator = CaselessKeyword('SLL') | CaselessKeyword('SRL') | CaselessKeyword('SLA') | CaselessKeyword('SRA') | CaselessKeyword('ROL') | CaselessKeyword('ROR')
 
-mode = Keyword('IN') | Keyword('OUT') | Keyword('INOUT') | Keyword('BUFFER') | Keyword('LINKAGE')
+mode = CaselessKeyword('IN') | CaselessKeyword('OUT') | CaselessKeyword('INOUT') | CaselessKeyword('BUFFER') | CaselessKeyword('LINKAGE')
 
 
 primary = Forward()
 
-
-
-
-
-
 expression = Forward()
-
-
-
-
-
 
 factor = ( (primary + ZeroOrMore(Literal('**') + primary)) |
            (Literal('ABS') + primary) |
@@ -138,12 +126,12 @@ relational_operator = oneOf('= /= < <= > >=')
 
 relation = shift_expression + Optional( relational_operator + shift_expression )
 
-expression << ( (relation + ZeroOrMore(Keyword('AND') + relation)) |
-               (relation + ZeroOrMore(Keyword('OR') + relation)) |
-               (relation + ZeroOrMore(Keyword('XOR') + relation)) |
-               (relation + ZeroOrMore(Keyword('NAND') + relation)) |
-               (relation + ZeroOrMore(Keyword('NOR') + relation)) |
-               (relation + ZeroOrMore(Keyword('XNOR') + relation)) )
+expression << ( (relation + ZeroOrMore(CaselessKeyword('AND') + relation)) |
+               (relation + ZeroOrMore(CaselessKeyword('OR') + relation)) |
+               (relation + ZeroOrMore(CaselessKeyword('XOR') + relation)) |
+               (relation + ZeroOrMore(CaselessKeyword('NAND') + relation)) |
+               (relation + ZeroOrMore(CaselessKeyword('NOR') + relation)) |
+               (relation + ZeroOrMore(CaselessKeyword('XNOR') + relation)) )
 
 formal_designator = name
 
@@ -153,7 +141,7 @@ formal_part = (formal_designator |
 
 actual_designator = (expression |
                      name |
-                     Keyword('OPEN'))
+                     CaselessKeyword('OPEN'))
 
 actual_part = (actual_designator |
                (name + Literal('(') + actual_designator + Literal(')')) |
@@ -174,8 +162,8 @@ qualified_expression = ( (type_mark + Literal("'") + Literal('(') + expression +
 
 type_conversion = type_mark + Literal('(') + expression + Literal(')')
 
-allocator = ( (Keyword('NEW') + subtype_indication) |
-	          (Keyword('NEW') + qualified_expression) )
+allocator = ( (CaselessKeyword('NEW') + subtype_indication) |
+	          (CaselessKeyword('NEW') + qualified_expression) )
 
 primary << (
 	name
@@ -193,7 +181,7 @@ operator_symbol = string_literal
 suffix = ( simple_name
 	| character_literal
 	| operator_symbol
-	| Keyword('ALL') )
+	| CaselessKeyword('ALL') )
 
 
 selected_name = prefix + Literal('.') + suffix
@@ -221,13 +209,13 @@ constraint = range_constraint | index_constraint
 subtype_indication << Optional(name) + type_mark + Optional( constraint )
 
 
-interface_constant_declaration = Optional(Keyword('CONSTANT')) + identifier_list + Literal(':') + Optional(Keyword('IN')) + subtype_indication + Optional( Literal(':=') + expression )
+interface_constant_declaration = Optional(CaselessKeyword('CONSTANT')) + identifier_list + Literal(':') + Optional(CaselessKeyword('IN')) + subtype_indication + Optional( Literal(':=') + expression )
 
-interface_signal_declaration = Optional(Keyword('SIGNAL')) + identifier_list + Literal(':') + Optional(mode) + subtype_indication + Optional(Keyword('BUS')) + Optional(Literal(':=') + expression)
+interface_signal_declaration = Optional(CaselessKeyword('SIGNAL')) + identifier_list + Literal(':') + Optional(mode) + subtype_indication + Optional(CaselessKeyword('BUS')) + Optional(Literal(':=') + expression)
 
-interface_variable_declaration = Optional(Keyword('VARIABLE')) + identifier_list + Literal(':') + Optional(mode) + subtype_indication + Optional(Literal(':=') + expression)
+interface_variable_declaration = Optional(CaselessKeyword('VARIABLE')) + identifier_list + Literal(':') + Optional(mode) + subtype_indication + Optional(Literal(':=') + expression)
 
-interface_file_declaration = Keyword('FILE') + identifier_list + Literal(':') + subtype_indication
+interface_file_declaration = CaselessKeyword('FILE') + identifier_list + Literal(':') + subtype_indication
 
 
 interface_declaration = ( interface_constant_declaration |
@@ -240,11 +228,11 @@ interface_element = interface_declaration
 interface_list = delimitedList(interface_element, delim=';')
 
 port_list = interface_list
-port_clause = Keyword('PORT') + Literal('(') + port_list + Literal(')') + Literal(';')
+port_clause = CaselessKeyword('PORT') + Literal('(') + port_list + Literal(')') + Literal(';')
 
 generic_list = interface_list
 
-generic_clause = Keyword('GENERIC') + Literal('(') + generic_list + Literal(')') + Literal(';')
+generic_clause = CaselessKeyword('GENERIC') + Literal('(') + generic_list + Literal(')') + Literal(';')
 
 entity_header = (
 	Optional(generic_clause) +
@@ -256,8 +244,8 @@ designator = identifier | operator_symbol
 formal_parameter_list = interface_list
 
 subprogram_specification = (
-	( Keyword('PROCEDURE') + designator + Optional(Literal('(') + formal_parameter_list + Literal(')')) ) |
-	( Optional(Keyword('PURE') | Keyword('IMPURE')) + Keyword('FUNCTION') + designator + Optional( Literal('(') + formal_parameter_list + Literal(')') ) + Keyword('RETURN') + type_mark )
+	( CaselessKeyword('PROCEDURE') + designator + Optional(Literal('(') + formal_parameter_list + Literal(')')) ) |
+	( Optional(CaselessKeyword('PURE') | CaselessKeyword('IMPURE')) + CaselessKeyword('FUNCTION') + designator + Optional( Literal('(') + formal_parameter_list + Literal(')') ) + CaselessKeyword('RETURN') + type_mark )
     )
 
 subprogram_declaration = subprogram_specification + Literal(';')
@@ -268,41 +256,41 @@ subprogram_declarative_part = ZeroOrMore(subprogram_declarative_item)
 
 sensitivity_list = delimitedList(name)
 
-sensitivity_clause = Keyword('ON') + sensitivity_list
+sensitivity_clause = CaselessKeyword('ON') + sensitivity_list
 
 condition = expression
 
-condition_clause = Keyword('UNTIL') + condition
+condition_clause = CaselessKeyword('UNTIL') + condition
 
-timeout_clause = Keyword('FOR') + expression
+timeout_clause = CaselessKeyword('FOR') + expression
 
-wait_statement = Optional(label + Literal(':')) + Keyword('WAIT') + Optional(sensitivity_clause) + Optional(condition_clause) + Optional(timeout_clause) + Literal(';')
+wait_statement = Optional(label + Literal(':')) + CaselessKeyword('WAIT') + Optional(sensitivity_clause) + Optional(condition_clause) + Optional(timeout_clause) + Literal(';')
 
 assertion = (
-	Keyword('ASSERT') + condition +
-		Optional(Keyword('REPORT') + expression) +
-		Optional(Keyword('SEVERITY') + expression)
+	CaselessKeyword('ASSERT') + condition +
+		Optional(CaselessKeyword('REPORT') + expression) +
+		Optional(CaselessKeyword('SEVERITY') + expression)
         )
 
 assertion_statement = Optional(label + Literal(':')) + assertion + Literal(';')
 
 report_statement = (
 	Optional(label + Literal(':')) +
-		Keyword('REPORT') + expression +
-			Optional(Keyword('SEVERITY') + expression) + Literal(';')
+		CaselessKeyword('REPORT') + expression +
+			Optional(CaselessKeyword('SEVERITY') + expression) + Literal(';')
             )
 
 target = name | aggregate
 
-delay_mechanism = Keyword('TRANSPORT') | (Optional(Keyword('REJECT') + expression) + Keyword('INERTIAL'))
+delay_mechanism = CaselessKeyword('TRANSPORT') | (Optional(CaselessKeyword('REJECT') + expression) + CaselessKeyword('INERTIAL'))
 
-waveform_element = (expression + Optional(Keyword('AFTER') + expression)) | (Keyword('NULL') + Optional(Keyword('AFTER') + expression))
+waveform_element = (expression + Optional(CaselessKeyword('AFTER') + expression)) | (CaselessKeyword('NULL') + Optional(CaselessKeyword('AFTER') + expression))
 
-waveform = delimitedList(waveform_element) | Keyword('UNAFFECTED')
+waveform = delimitedList(waveform_element) | CaselessKeyword('UNAFFECTED')
 
-signal_assignment_statement = Optional(label + Literal(':')) + target + Keyword('<=') + Optional(delay_mechanism) + waveform + Literal(';')
+signal_assignment_statement = Optional(label + Literal(':')) + target + CaselessKeyword('<=') + Optional(delay_mechanism) + waveform + Literal(';')
 
-variable_assignment_statement = target + Keyword(':=') + expression + Literal(';')
+variable_assignment_statement = target + CaselessKeyword(':=') + expression + Literal(';')
 
 procedure_call = name + Optional( Literal('(') + actual_parameter_part + Literal(')') )
 
@@ -314,44 +302,44 @@ sequence_of_statements = ZeroOrMore(sequential_statement)
 
 if_statement = (
 	Optional(label + Literal(':')) +
-		Keyword('IF') + condition + Keyword('THEN') +
+		CaselessKeyword('IF') + condition + CaselessKeyword('THEN') +
 			sequence_of_statements +
-		ZeroOrMore( Keyword('ELSIF') + condition + Keyword('THEN') +
+		ZeroOrMore( CaselessKeyword('ELSIF') + condition + CaselessKeyword('THEN') +
 			sequence_of_statements ) +
-		Optional(Keyword('ELSE') +
+		Optional(CaselessKeyword('ELSE') +
 			sequence_of_statements) +
-		Keyword('END') + Keyword('IF') + Optional(label) + Literal(';')
+		CaselessKeyword('END') + CaselessKeyword('IF') + Optional(label) + Literal(';')
         )
 
 case_statement_alternative = (
-	Keyword('WHEN') + choices + Keyword('=>') +
+	CaselessKeyword('WHEN') + choices + CaselessKeyword('=>') +
 		sequence_of_statements )
 
 case_statement = (
 	Optional(label + Literal(':') ) +
-		Keyword('CASE') + expression + Keyword('IS') +
+		CaselessKeyword('CASE') + expression + CaselessKeyword('IS') +
 			OneOrMore(case_statement_alternative) +
-		Keyword('END') + Keyword('CASE') + Optional( label ) + Literal(';')
+		CaselessKeyword('END') + CaselessKeyword('CASE') + Optional( label ) + Literal(';')
         )
 
-parameter_specification = identifier + Keyword('IN') + discrete_range
+parameter_specification = identifier + CaselessKeyword('IN') + discrete_range
 
-iteration_scheme = (Keyword('WHILE') + condition) | (Keyword('FOR') + parameter_specification)
+iteration_scheme = (CaselessKeyword('WHILE') + condition) | (CaselessKeyword('FOR') + parameter_specification)
 
 loop_statement = (
 	Optional(label + Literal(':') ) +
-		Optional( iteration_scheme ) + Keyword('LOOP') +
+		Optional( iteration_scheme ) + CaselessKeyword('LOOP') +
 			sequence_of_statements +
-		Keyword('END') + Keyword('LOOP') + Optional(label) + Literal(';')
+		CaselessKeyword('END') + CaselessKeyword('LOOP') + Optional(label) + Literal(';')
         )
 
-next_statement = Optional(label + Literal(':')) + Keyword('NEXT') + Optional(label) + Optional(Keyword('WHEN') + condition) + Literal(';')
+next_statement = Optional(label + Literal(':')) + CaselessKeyword('NEXT') + Optional(label) + Optional(CaselessKeyword('WHEN') + condition) + Literal(';')
 
-exit_statement = Optional(label + Literal(':')) + Keyword('EXIT') + Optional(label) + Optional(Keyword('WHEN') + condition) + Literal(';')
+exit_statement = Optional(label + Literal(':')) + CaselessKeyword('EXIT') + Optional(label) + Optional(CaselessKeyword('WHEN') + condition) + Literal(';')
 
-return_statement = Optional(label + Literal(':')) + Keyword('RETURN') + Optional(expression) + Literal(';')
+return_statement = Optional(label + Literal(':')) + CaselessKeyword('RETURN') + Optional(expression) + Literal(';')
 
-null_statement = Optional(label + Literal(':')) + Keyword('NULL') + Literal(';')
+null_statement = Optional(label + Literal(':')) + CaselessKeyword('NULL') + Literal(';')
 
 sequential_statement << (
 	wait_statement
@@ -371,14 +359,14 @@ sequential_statement << (
 
 subprogram_statement_part = ZeroOrMore(sequential_statement)
 
-subprogram_kind = Keyword('PROCEDURE') | Keyword('FUNCTION')
+subprogram_kind = CaselessKeyword('PROCEDURE') | CaselessKeyword('FUNCTION')
 
 subprogram_body = (
-	subprogram_specification + Keyword('IS') +
+	subprogram_specification + CaselessKeyword('IS') +
 		subprogram_declarative_part +
-	Keyword('BEGIN') +
+	CaselessKeyword('BEGIN') +
 		subprogram_statement_part +
-	Keyword('END') + Optional(subprogram_kind) + Optional( designator ) + Literal(';')
+	CaselessKeyword('END') + Optional(subprogram_kind) + Optional( designator ) + Literal(';')
     )
 
 enumeration_type_definition = Literal('(') + delimitedList(enumeration_literal) + Literal(')')
@@ -393,10 +381,10 @@ secondary_unit_declaration = identifier + Literal('=') + physical_literal + Lite
 
 physical_type_definition = (
 	range_constraint +
-		Keyword('UNITS') +
+		CaselessKeyword('UNITS') +
 			base_unit_declaration +
 			ZeroOrMore(secondary_unit_declaration) +
-		Keyword('END') + Keyword('UNITS') + Optional(simple_name)
+		CaselessKeyword('END') + CaselessKeyword('UNITS') + Optional(simple_name)
         )
 
 scalar_type_definition = enumeration_type_definition | integer_type_definition | floating_type_definition | physical_type_definition
@@ -404,11 +392,11 @@ scalar_type_definition = enumeration_type_definition | integer_type_definition |
 index_subtype_definition = type_mark + range_ + Literal('<>')
 
 unconstrained_array_definition = (
-	Keyword('ARRAY') + Literal('(') + delimitedList(index_subtype_definition) + Literal(')') +
-		Keyword('OF') + subtype_indication
+	CaselessKeyword('ARRAY') + Literal('(') + delimitedList(index_subtype_definition) + Literal(')') +
+		CaselessKeyword('OF') + subtype_indication
         )
 
-constrained_array_definition = Keyword('ARRAY') + index_constraint + Keyword('OF') + subtype_indication
+constrained_array_definition = CaselessKeyword('ARRAY') + index_constraint + CaselessKeyword('OF') + subtype_indication
 
 array_type_definition = unconstrained_array_definition | constrained_array_definition
 
@@ -417,16 +405,16 @@ element_subtype_definition = subtype_indication
 element_declaration = identifier_list + Literal(':') + element_subtype_definition + Literal(';')
 
 record_type_definition = (
-	Keyword('RECORD') +
+	CaselessKeyword('RECORD') +
 		OneOrMore(element_declaration) +
-	Keyword('END') + Keyword('RECORD') + Optional(simple_name)
+	CaselessKeyword('END') + CaselessKeyword('RECORD') + Optional(simple_name)
     )
 
 composite_type_definition = array_type_definition | record_type_definition
 
-access_type_definition = Keyword('ACCESS') + subtype_indication
+access_type_definition = CaselessKeyword('ACCESS') + subtype_indication
 
-file_type_definition = Keyword('FILE') + Keyword('OF') + type_mark
+file_type_definition = CaselessKeyword('FILE') + CaselessKeyword('OF') + type_mark
 
 type_definition = (
 	scalar_type_definition
@@ -435,62 +423,62 @@ type_definition = (
 	| file_type_definition
     )
 
-full_type_declaration = Keyword('TYPE') + identifier + Keyword('IS') + type_definition + Literal(';')
+full_type_declaration = CaselessKeyword('TYPE') + identifier + CaselessKeyword('IS') + type_definition + Literal(';')
 
-incomplete_type_declaration = Keyword('TYPE') + identifier + Literal(';')
+incomplete_type_declaration = CaselessKeyword('TYPE') + identifier + Literal(';')
 
 type_declaration = full_type_declaration | incomplete_type_declaration
 
-subtype_declaration = Keyword('SUBTYPE') + identifier + Keyword('IS') + subtype_indication + Literal(';')
+subtype_declaration = CaselessKeyword('SUBTYPE') + identifier + CaselessKeyword('IS') + subtype_indication + Literal(';')
 
-constant_declaration = Keyword('CONSTANT') + identifier_list + Literal(':') + subtype_indication + Optional(Keyword(':=') + expression) + Literal(';')
+constant_declaration = CaselessKeyword('CONSTANT') + identifier_list + Literal(':') + subtype_indication + Optional(CaselessKeyword(':=') + expression) + Literal(';')
 
-variable_declaration = Optional(Keyword('SHARED')) + Keyword('VARIABLE') + identifier_list + Literal(':') + subtype_indication + Optional(Keyword(':=') + expression) + Literal(';')
+variable_declaration = Optional(CaselessKeyword('SHARED')) + CaselessKeyword('VARIABLE') + identifier_list + Literal(':') + subtype_indication + Optional(CaselessKeyword(':=') + expression) + Literal(';')
 
 file_logical_name = expression
 
-file_open_information = Optional(Keyword('OPEN') + expression) + Keyword('IS') + file_logical_name
+file_open_information = Optional(CaselessKeyword('OPEN') + expression) + CaselessKeyword('IS') + file_logical_name
 
-file_declaration = Keyword('FILE') + identifier_list + Literal(':') + subtype_indication + Optional(file_open_information) + Literal(';')
+file_declaration = CaselessKeyword('FILE') + identifier_list + Literal(':') + subtype_indication + Optional(file_open_information) + Literal(';')
 
 alias_designator = identifier | character_literal | operator_symbol
 
-alias_declaration = Keyword('ALIAS') + alias_designator + Optional(Literal(':') + subtype_indication) + Keyword('IS') + name + Optional(signature) + Literal(';')
+alias_declaration = CaselessKeyword('ALIAS') + alias_designator + Optional(Literal(':') + subtype_indication) + CaselessKeyword('IS') + name + Optional(signature) + Literal(';')
 
-attribute_declaration = Keyword('ATTRIBUTE') + identifier + Literal(':') + type_mark + Literal(';')
+attribute_declaration = CaselessKeyword('ATTRIBUTE') + identifier + Literal(':') + type_mark + Literal(';')
 
 entity_tag = simple_name | character_literal | operator_symbol
 
 entity_designator = entity_tag + Optional(signature)
 
-entity_name_list = delimitedList(entity_designator) | Keyword('OTHERS') | Keyword('ALL')
+entity_name_list = delimitedList(entity_designator) | CaselessKeyword('OTHERS') | CaselessKeyword('ALL')
 
 entity_class = (
-	Keyword('ENTITY')	     | Keyword('ARCHITECTURE')  | Keyword('CONFIGURATION')
-	| Keyword('PROCEDURE')  | Keyword('FUNCTION')	     | Keyword('PACKAGE')
-	| Keyword('TYPE')	     | Keyword('SUBTYPE')	     | Keyword('CONSTANT')
-	| Keyword('SIGNAL')     | Keyword('VARIABLE')	     | Keyword('COMPONENT')
-	| Keyword('LABEL')	     | Keyword('LITERAL')	     | Keyword('UNITS')
-	| Keyword('GROUP')	     | Keyword('FILE')
+	CaselessKeyword('ENTITY')	     | CaselessKeyword('ARCHITECTURE')  | CaselessKeyword('CONFIGURATION')
+	| CaselessKeyword('PROCEDURE')  | CaselessKeyword('FUNCTION')	     | CaselessKeyword('PACKAGE')
+	| CaselessKeyword('TYPE')	     | CaselessKeyword('SUBTYPE')	     | CaselessKeyword('CONSTANT')
+	| CaselessKeyword('SIGNAL')     | CaselessKeyword('VARIABLE')	     | CaselessKeyword('COMPONENT')
+	| CaselessKeyword('LABEL')	     | CaselessKeyword('LITERAL')	     | CaselessKeyword('UNITS')
+	| CaselessKeyword('GROUP')	     | CaselessKeyword('FILE')
     )
 
 entity_specification = entity_name_list + Literal(':') + entity_class
 
-attribute_specification = Keyword('ATTRIBUTE') + attribute_designator + Keyword('OF') + entity_specification + Keyword('IS') + expression + Literal(';')
+attribute_specification = CaselessKeyword('ATTRIBUTE') + attribute_designator + CaselessKeyword('OF') + entity_specification + CaselessKeyword('IS') + expression + Literal(';')
 
-use_clause = Keyword('USE') + delimitedList(selected_name) + Literal(';')
+use_clause = CaselessKeyword('USE') + delimitedList(selected_name) + Literal(';')
 
 entity_class_entry = entity_class + Optional(Literal('<>'))
 
 entity_class_entry_list = delimitedList(entity_class_entry)
 
-group_template_declaration = Keyword('GROUP') + identifier + Keyword('IS') + Literal('(') + entity_class_entry_list + Literal(')') + Literal(';')
+group_template_declaration = CaselessKeyword('GROUP') + identifier + CaselessKeyword('IS') + Literal('(') + entity_class_entry_list + Literal(')') + Literal(';')
 
 group_constituent = name | character_literal
 
 group_constituent_list = delimitedList(group_constituent)
 
-group_declaration = Keyword('GROUP') + identifier + Literal(':') + name + Literal('(') + group_constituent_list + Literal(')') + Literal(';')
+group_declaration = CaselessKeyword('GROUP') + identifier + Literal(':') + name + Literal('(') + group_constituent_list + Literal(')') + Literal(';')
 
 subprogram_declarative_item << (
 	subprogram_declaration
@@ -508,15 +496,15 @@ subprogram_declarative_item << (
 	| group_declaration
     )
 
-signal_kind = Keyword('REGISTER') | Keyword('BUS')
+signal_kind = CaselessKeyword('REGISTER') | CaselessKeyword('BUS')
 
-signal_declaration = Keyword('signal') + identifier_list + Literal(':') + subtype_indication + Optional(signal_kind) + Optional(Keyword(':=') + expression) + Literal(';')
+signal_declaration = CaselessKeyword('signal') + identifier_list + Literal(':') + subtype_indication + Optional(signal_kind) + Optional(CaselessKeyword(':=') + expression) + Literal(';')
 
-signal_list = delimitedList(name) | Keyword('OTHERS') | Keyword('ALL')
+signal_list = delimitedList(name) | CaselessKeyword('OTHERS') | CaselessKeyword('ALL')
 
 guarded_signal_specification = signal_list + Literal(':') + type_mark
 
-disconnection_specification = Keyword('DISCONNECT') + guarded_signal_specification + Keyword('AFTER') + expression + Literal(';')
+disconnection_specification = CaselessKeyword('DISCONNECT') + guarded_signal_specification + CaselessKeyword('AFTER') + expression + Literal(';')
 
 entity_declarative_item = (
 	subprogram_declaration
@@ -538,9 +526,9 @@ entity_declarative_item = (
 
 entity_declarative_part = ZeroOrMore(entity_declarative_item)
 
-concurrent_assertion_statement = Optional(label + Literal(':')) + Optional(Keyword('POSTPONED')) + assertion + Literal(';')
+concurrent_assertion_statement = Optional(label + Literal(':')) + Optional(CaselessKeyword('POSTPONED')) + assertion + Literal(';')
 
-concurrent_procedure_call_statement = Optional(label + Literal(':')) + Optional(Keyword('POSTPONED')) + procedure_call + Literal(';')
+concurrent_procedure_call_statement = Optional(label + Literal(':')) + Optional(CaselessKeyword('POSTPONED')) + procedure_call + Literal(';')
 
 process_declarative_item = (
 	subprogram_declaration
@@ -564,11 +552,11 @@ process_statement_part = ZeroOrMore(sequential_statement)
 
 process_statement = (
     Optional( label + Literal(':') ) +
-		Optional(Keyword('POSTPONED')) + Keyword('PROCESS') + Optional( Literal('(') + sensitivity_list + Literal(')')) + Optional(Keyword('IS')) +
+		Optional(CaselessKeyword('POSTPONED')) + CaselessKeyword('PROCESS') + Optional( Literal('(') + sensitivity_list + Literal(')')) + Optional(CaselessKeyword('IS')) +
 			process_declarative_part +
-		Keyword('BEGIN') +
+		CaselessKeyword('BEGIN') +
 			process_statement_part +
-		Keyword('END') + Optional(Keyword('POSTPONED')) + Keyword('PROCESS') + Optional(label) + Literal(';')
+		CaselessKeyword('END') + Optional(CaselessKeyword('POSTPONED')) + CaselessKeyword('PROCESS') + Optional(label) + Literal(';')
         )
 
 entity_statement = concurrent_assertion_statement | concurrent_procedure_call_statement | process_statement
@@ -576,11 +564,11 @@ entity_statement = concurrent_assertion_statement | concurrent_procedure_call_st
 entity_statement_part = ZeroOrMore(entity_statement)
 
 entity_declaration = (
-    Keyword('ENTITY') + identifier + Keyword('IS') +
+    CaselessKeyword('ENTITY') + identifier + CaselessKeyword('IS') +
 		entity_header +
         entity_declarative_part +
-        Optional( Keyword('BEGIN') + entity_statement_part ) +
-	Keyword('END') + Optional( Keyword('ENTITY') ) + Optional( simple_name ) + Literal(';')
+        Optional( CaselessKeyword('BEGIN') + entity_statement_part ) +
+	CaselessKeyword('END') + Optional( CaselessKeyword('ENTITY') ) + Optional( simple_name ) + Literal(';')
 )
 
 configuration_declarative_item = use_clause | attribute_specification | group_declaration
@@ -593,54 +581,54 @@ block_specification = name | label | (label + Optional(Literal('(') + index_spec
 
 block_configuration = Forward()
 
-instantiation_list = delimitedList(label) | Keyword('OTHERS') | Keyword('ALL')
+instantiation_list = delimitedList(label) | CaselessKeyword('OTHERS') | CaselessKeyword('ALL')
 
 component_specification = instantiation_list + Literal(':') + name
 
 entity_aspect = (
-	  (Keyword('ENTITY') + name + Optional( Literal('(') + identifier + Literal(')') ))
-	| (Keyword('CONFIGURATION') + name)
-	| Keyword('OPEN')
+	  (CaselessKeyword('ENTITY') + name + Optional( Literal('(') + identifier + Literal(')') ))
+	| (CaselessKeyword('CONFIGURATION') + name)
+	| CaselessKeyword('OPEN')
     )
 
-generic_map_aspect = Keyword('GENERIC') + Keyword('MAP') + Literal('(') + association_list + Literal(')')
+generic_map_aspect = CaselessKeyword('GENERIC') + CaselessKeyword('MAP') + Literal('(') + association_list + Literal(')')
 
-port_map_aspect = Keyword('PORT') + Keyword('MAP') + Literal('(') + association_list + Literal(')')
+port_map_aspect = CaselessKeyword('PORT') + CaselessKeyword('MAP') + Literal('(') + association_list + Literal(')')
 
 binding_indication = (
-	Optional( Keyword('USE') + entity_aspect ) +
+	Optional( CaselessKeyword('USE') + entity_aspect ) +
 	Optional( generic_map_aspect ) +
 	Optional( port_map_aspect )
         )
 
 component_configuration = (
-	Keyword('FOR') + component_specification +
+	CaselessKeyword('FOR') + component_specification +
 		Optional(binding_indication + Literal(';')) +
 		Optional(block_configuration) +
-	Keyword('END') + Keyword('FOR') + Literal(';')
+	CaselessKeyword('END') + CaselessKeyword('FOR') + Literal(';')
     )
 
 configuration_item = block_configuration | component_configuration
 
 block_configuration << (
-	Keyword('FOR') + block_specification +
+	CaselessKeyword('FOR') + block_specification +
 		ZeroOrMore(use_clause) +
 		ZeroOrMore(configuration_item) +
-	Keyword('END') + Keyword('FOR') + Literal(';')
+	CaselessKeyword('END') + CaselessKeyword('FOR') + Literal(';')
     )
 
 configuration_declaration = (
-	Keyword('CONFIGURATION') + identifier + Keyword('OF') + name + Keyword('IS') +
+	CaselessKeyword('CONFIGURATION') + identifier + CaselessKeyword('OF') + name + CaselessKeyword('IS') +
 		configuration_declarative_part +
 		block_configuration +
-	Keyword('END') + Optional('CONFIGURATION') + Optional(simple_name) + Literal(';')
+	CaselessKeyword('END') + Optional('CONFIGURATION') + Optional(simple_name) + Literal(';')
     )
 
 component_declaration = (
-	Keyword('COMPONENT') + identifier + Optional(Keyword('IS')) +
+	CaselessKeyword('COMPONENT') + identifier + Optional(CaselessKeyword('IS')) +
 		Optional(generic_clause) +
 		Optional(port_clause) +
-	Keyword('END') + Keyword('COMPONENT') + Optional(simple_name) + Literal(';')
+	CaselessKeyword('END') + CaselessKeyword('COMPONENT') + Optional(simple_name) + Literal(';')
     )
 
 package_declarative_item = (
@@ -664,9 +652,9 @@ package_declarative_item = (
 package_declarative_part = ZeroOrMore(package_declarative_item)
 
 package_declaration = (
-	Keyword('PACKAGE') + identifier + Keyword('IS') +
+	CaselessKeyword('PACKAGE') + identifier + CaselessKeyword('IS') +
 		package_declarative_part +
-	Keyword('END') + Optional(Keyword('PACKAGE')) + Optional(simple_name) + Literal(';')
+	CaselessKeyword('END') + Optional(CaselessKeyword('PACKAGE')) + Optional(simple_name) + Literal(';')
     )
 
 primary_unit = (
@@ -675,7 +663,7 @@ primary_unit = (
 	| package_declaration
     )
 
-configuration_specification = Keyword('FOR') + component_specification + binding_indication + Literal(';')
+configuration_specification = CaselessKeyword('FOR') + component_specification + binding_indication + Literal(';')
 
 block_declarative_item = (
 	subprogram_declaration
@@ -714,42 +702,42 @@ block_statement_part = ZeroOrMore(concurrent_statement)
 
 block_statement = (
     label + Literal(':') +
-		Keyword('BLOCK') + Optional( Literal('(') + expression + Literal(')') ) + Optional(Keyword('IS')) +
+		CaselessKeyword('BLOCK') + Optional( Literal('(') + expression + Literal(')') ) + Optional(CaselessKeyword('IS')) +
 			block_header +
 			block_declarative_part +
-		Keyword('BEGIN') +
+		CaselessKeyword('BEGIN') +
 			block_statement_part +
-		Keyword('END') + Keyword('BLOCK') + Optional(label) + Literal(';')
+		CaselessKeyword('END') + CaselessKeyword('BLOCK') + Optional(label) + Literal(';')
         )
 
-options = Optional(Keyword('GUARDED')) + Optional(delay_mechanism)
+options = Optional(CaselessKeyword('GUARDED')) + Optional(delay_mechanism)
 
 conditional_waveforms = (
-	ZeroOrMore( waveform + Keyword('WHEN') + condition + Keyword('ELSE') ) +
-	waveform + Optional(Keyword('WHEN') + condition)
+	ZeroOrMore( waveform + CaselessKeyword('WHEN') + condition + CaselessKeyword('ELSE') ) +
+	waveform + Optional(CaselessKeyword('WHEN') + condition)
     )
 
-conditional_signal_assignment = target + Keyword('<=') + options + conditional_waveforms + Literal(';')
+conditional_signal_assignment = target + CaselessKeyword('<=') + options + conditional_waveforms + Literal(';')
 
 selected_waveforms = (
-	ZeroOrMore(waveform + Keyword('WHEN') + choices + Literal(',')) +
-	waveform + Keyword('WHEN') + choices
+	ZeroOrMore(waveform + CaselessKeyword('WHEN') + choices + Literal(',')) +
+	waveform + CaselessKeyword('WHEN') + choices
     )
 
 selected_signal_assignment = (
-	Keyword('WITH') + expression + Keyword('SELECT') +
-		target + Keyword('<=') + options + selected_waveforms + Literal(';')
+	CaselessKeyword('WITH') + expression + CaselessKeyword('SELECT') +
+		target + CaselessKeyword('<=') + options + selected_waveforms + Literal(';')
         )
 
 concurrent_signal_assignment_statement = (
-	  (Optional(label + Literal(':')) + Optional(Keyword('POSTPONED')) + conditional_signal_assignment)
-	| (Optional(label + Literal(':')) + Optional(Keyword('POSTPONED')) + selected_signal_assignment)
+	  (Optional(label + Literal(':')) + Optional(CaselessKeyword('POSTPONED')) + conditional_signal_assignment)
+	| (Optional(label + Literal(':')) + Optional(CaselessKeyword('POSTPONED')) + selected_signal_assignment)
     )
 
 instantiated_unit = (
-	(Optional(Keyword('COMPONENT')) + name)
-	| (Keyword('ENTITY') + name + Optional( Literal('(') + identifier + Literal(')') ))
-	| (Keyword('CONFIGURATION') + name)
+	(Optional(CaselessKeyword('COMPONENT')) + name)
+	| (CaselessKeyword('ENTITY') + name + Optional( Literal('(') + identifier + Literal(')') ))
+	| (CaselessKeyword('CONFIGURATION') + name)
     )
 
 component_instantiation_statement = (
@@ -760,17 +748,17 @@ component_instantiation_statement = (
             )
 
 generation_scheme = (
-	(Keyword('FOR') + parameter_specification)
-	| (Keyword('IF') + condition)
+	(CaselessKeyword('FOR') + parameter_specification)
+	| (CaselessKeyword('IF') + condition)
     )
 
 generate_statement = (
 	label + Literal(':') +
-		generation_scheme + Keyword('GENERATE') +
+		generation_scheme + CaselessKeyword('GENERATE') +
 			Optional( ZeroOrMore(block_declarative_item) +
-		Keyword('BEGIN')) +
+		CaselessKeyword('BEGIN')) +
 			ZeroOrMore(concurrent_statement) +
-		Keyword('END') + Keyword('GENERATE') + Optional(label) + Literal(';')
+		CaselessKeyword('END') + CaselessKeyword('GENERATE') + Optional(label) + Literal(';')
         )
 
 concurrent_statement << (
@@ -786,11 +774,11 @@ concurrent_statement << (
 architecture_statement_part = ZeroOrMore(concurrent_statement)
 
 architecture_body = (
-	Keyword('ARCHITECTURE') + identifier + Keyword('OF') + name + Keyword('IS') +
+	CaselessKeyword('ARCHITECTURE') + identifier + CaselessKeyword('OF') + name + CaselessKeyword('IS') +
 		architecture_declarative_part +
-	Keyword('BEGIN') +
+	CaselessKeyword('BEGIN') +
 		architecture_statement_part +
-	Keyword('END') + Optional(Keyword('ARCHITECTURE')) + Optional(simple_name) + Literal(';')
+	CaselessKeyword('END') + Optional(CaselessKeyword('ARCHITECTURE')) + Optional(simple_name) + Literal(';')
     )
 
 package_body_declarative_item = (
@@ -810,9 +798,9 @@ package_body_declarative_item = (
 package_body_declarative_part = ZeroOrMore(package_body_declarative_item)
 
 package_body = (
-	Keyword('PACKAGE') + Keyword('BODY') + simple_name + Keyword('IS') +
+	CaselessKeyword('PACKAGE') + CaselessKeyword('BODY') + simple_name + CaselessKeyword('IS') +
 		package_body_declarative_part +
-	Keyword('END') + Optional(Keyword('PACKAGE') + Keyword('BODY')) + Optional(simple_name) + Literal(';')
+	CaselessKeyword('END') + Optional(CaselessKeyword('PACKAGE') + CaselessKeyword('BODY')) + Optional(simple_name) + Literal(';')
     )
 
 secondary_unit = architecture_body | package_body
@@ -823,7 +811,7 @@ logical_name = identifier
 
 logical_name_list = delimitedList(logical_name)
 
-library_clause = Keyword('LIBRARY') + logical_name_list + Literal(';')
+library_clause = CaselessKeyword('LIBRARY') + logical_name_list + Literal(';')
 
 context_item = library_clause | use_clause
 
@@ -832,44 +820,6 @@ context_clause = ZeroOrMore(context_item)
 design_unit = context_clause + library_unit
 
 design_file = OneOrMore(design_unit)
-
-'''
-basic_graphic_character = upper_case_letter | digit | special_character| space_character
-graphic_character = basic_graphic_character | lower_case_letter | other_special_character
-
-basic_character ::=
-	basic_graphic_character <#basic_graphic_character> | format_effector
-
-declaration ::=
-	type_declaration <#type_declaration>
-	| subtype_declaration <#subtype_declaration>
-	| object_declaration <#object_declaration>
-	| interface_declaration <#interface_declaration>
-	| alias_declaration <#alias_declaration>
-	| attribute_declaration <#attribute_declaration>
-	| component_declaration <#component_declaration>
-	| group_template_declaration <#group_template_declaration>
-	| group_declaration <#group_declaration>
-	| entity_declaration <#entity_declaration>
-	| configuration_declaration <#configuration_declaration>
-	| subprogram_declaration <#subprogram_declaration>
-	| package_declaration <#package_declaration>
-
-letter ::= upper_case_letter | lower_case_letter
-
-letter_or_digit ::= letter <#letter> | digit
-
-logical_operator ::= *AND* | *OR* | *NAND* | *NOR* | *XOR* | *XNOR*
-
-miscellaneous_operator ::= **** | *ABS* | *NOT*
-
-object_declaration ::=
-	constant_declaration <#constant_declaration>
-	| signal_declaration <#signal_declaration>
-	| variable_declaration <#variable_declaration>
-	| file_declaration <#file_declaration>
-
-'''
 
 if __name__ == '__main__':
     design_file.parseFile('dinges.vhd')
