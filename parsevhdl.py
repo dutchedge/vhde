@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from pprint import pprint
 from pyparsing import *
 
 # 
@@ -822,7 +823,8 @@ design_unit = context_clause + library_unit
 design_file = OneOrMore(design_unit)
 
 if __name__ == '__main__':
-    design_file.parseFile('dinges.vhd')
+    results = design_file.parseFile('dinges.vhd')
+    pprint(results.asList())
 
 
 
