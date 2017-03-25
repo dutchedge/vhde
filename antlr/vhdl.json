@@ -1,0 +1,48 @@
+[
+  { "type" : "design_unit",
+    "entity_declaration" : {
+      "name" : "...",
+      "ports" : [
+        { "type" : "interface_port_declaration",
+          "name" : "...",
+          "signal_mode" : "...",
+          "subtype_indication" : "..."
+        }
+      ]
+    },
+    "architecture_body" : {
+      "name": "...",
+      "entity": "...",
+      "components" : [
+        { "type" : "component_declaration",
+          "name" : "...",
+          "ports" : [
+            { "type" : "interface_port_declaration",
+              "name" : "...",
+              "signal_mode" : "...",
+              "subtype_indication" : "..."
+            }
+          ]
+        }
+      ],
+      "signals" : [ "...", "...", "..." ],
+      "component_instantiations" : [ 
+        { "type" : "component_instantiation_statement",
+          "instancename" : "...",
+          "componentname" : "...",
+          "portmap" : [ { "type" : "association_element",
+                          "formal_part" : "...",
+                          "actual_part" : "..." } ]
+        } 
+      ]
+    }
+  },
+  { "type" : "design_unit",
+    "context_clause" : {},
+    "entity_declaration" : {},
+    "configuration_declaration" : {},
+    "package_declaration" : {},
+    "architecture_body" : {},
+    "package_body" : {}
+  }
+]
