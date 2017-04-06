@@ -40,6 +40,7 @@
 #define COMPONENT_INITIAL_X  100
 #define COMPONENT_INITIAL_Y  100
 
+
 #define FACTOR  1.2
 
 static bool on_my_captured_event(Clutter::Event* pEvent, Glib::RefPtr<Clutter::Stage> pStage)
