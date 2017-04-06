@@ -11,6 +11,9 @@ addons:
        #- cluttermm
        - libgtkmm-2.4-dev
 
+before_install:
+  - sudo apt-get install clutter-1.0 -y
+
 compiler:
   - gcc
   - clang
