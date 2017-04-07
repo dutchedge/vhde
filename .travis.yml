@@ -13,6 +13,8 @@ addons:
 
 before_install:
   - sudo apt-get install clutter-1.0 -y
+  - sudo apt-get install pangomm-1.4 -y
+  - sudo apt-get install atkmm-1.6 -y
 
 compiler:
   - gcc
