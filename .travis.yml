@@ -2,6 +2,9 @@ language: cpp
 dist: trusty
 sudo: true
 
+env:
+  - PKG_CONFIG_PATH=${HOME}/.local/share/pkgconfig:${HOME}/.local/lib/pkgconfig/
+
 addons:
   apt:
     packages:
