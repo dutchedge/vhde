@@ -21,7 +21,7 @@ before_install:
   - sudo apt-get install atkmm-1.6 -y
   - sudo apt-get install cpanminus -y
   - sudo apt-get install libxml-parser-perl -y
-  - sudo apt-get install mm-common-prepare -y
+  - sudo apt-get install mm-common -y
   - sudo cpanm XML::XPath
 
 compiler:
