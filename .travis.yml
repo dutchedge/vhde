@@ -4,6 +4,7 @@ sudo: true
 
 env:
   - PKG_CONFIG_PATH=${HOME}/.local/share/pkgconfig:${HOME}/.local/lib/pkgconfig/
+  - ACLOCAL_PATH="${HOME}/.local/share/aclocal"
 
 addons:
   apt:
@@ -20,6 +21,7 @@ before_install:
   - sudo apt-get install atkmm-1.6 -y
   - sudo apt-get install cpanminus -y
   - sudo apt-get install libxml-parser-perl -y
+  - sudo apt-get install mm-common-prepare -y
   - sudo cpanm XML::XPath
 
 compiler:
@@ -31,6 +33,6 @@ before_script:
   - export PATH="${PATH}:${HOME}/.local/bin"
   - ./install-cluttermm.sh
 
-#script:
-#  - cmake .
-#  - make
+script:
+  - cmake .
+  - make
