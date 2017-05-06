@@ -6,10 +6,11 @@ SRCDIR="cluttermm-master"
 INSTALLDIR="${HOME}/.local"
 
 if [ ! -d "${SRCDIR}" ]; then
-  wget https://github.com/GNOME/cluttermm/archive/cluttermm-1.2.zip -O "${TMPZIP}"
+  CLUTTER_DIR=cluttermm-1.0
+  wget https://github.com/GNOME/cluttermm/archive/${CLUTTER_DIR}.zip -O "${TMPZIP}"
   unzip "${TMPZIP}"
   rm -f "${TMPZIP}"
-  mv cluttermm-cluttermm-1.2 ${SRCDIR}
+  mv cluttermm-${CLUTTER_DIR} ${SRCDIR}
 fi
 
 mkdir -p "${INSTALLDIR}"
