@@ -22,7 +22,6 @@ before_install:
   - sudo apt-get install cpanminus -y
   - sudo apt-get install libxml-parser-perl -y
   - sudo apt-get install mm-common -y
-  - sudo apt-get install glibmm -y
   - sudo cpanm XML::XPath
  # sudo apt-get install libcairomm-1.0
  # -sudo apt-get install libgtkmm-2.4
