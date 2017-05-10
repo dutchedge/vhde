@@ -18,6 +18,10 @@ mkdir -p "${INSTALLDIR}"
 pushd "${SRCDIR}" > /dev/null
 
 ACLOCAL_FLAGS="-I ${INSTALLDIR}/share/aclocal" ./autogen.sh --prefix="${INSTALLDIR}" --disable-documentation
+set +e
+make
+sed -i "0,/Texture_Class/s//Texture_Class1/" clutter/cluttermm/wrap_init.cc
+set -e
 make
 make install
 
