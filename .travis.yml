@@ -8,12 +8,16 @@ env:
 
 addons:
   apt:
+    sources:
+       - george-edison55-precise-backports # cmake 3.2.3 / doxygen 1.8.3
     packages:
        - libcogl-dev
        - libclutter-1.0-dev
        #- mm-common
        #- cluttermm
        - libgtkmm-2.4-dev
+       - cmake
+       - cmake-data
 
 before_install:
   - sudo apt-get install clutter-1.0 -y
@@ -35,5 +39,6 @@ before_script:
   - ./install-cluttermm.sh
 
 script:
+  - cmake --version
   - cmake .
   - make
