@@ -3,8 +3,7 @@ dist: trusty
 sudo: true
 
 env:
-  - PKG_CONFIG_PATH=${HOME}/.local/share/pkgconfig:${HOME}/.local/lib/pkgconfig/
-  - ACLOCAL_PATH="${HOME}/.local/share/aclocal"
+  - PKG_CONFIG_PATH=${HOME}/.local/share/pkgconfig:${HOME}/.local/lib/pkgconfig/ ACLOCAL_PATH="${HOME}/.local/share/aclocal"
 
 addons:
   apt:
