@@ -9,7 +9,10 @@ addons:
   apt:
     sources:
        - george-edison55-precise-backports # cmake 3.2.3 / doxygen 1.8.3
+       - ubuntu-toolchain-r-test # gcc-5 / g++-5
     packages:
+       - gcc-5
+       - g++-5
        - libcogl-dev
        - libclutter-1.0-dev
        #- mm-common
@@ -26,8 +29,8 @@ before_install:
   - sudo apt-get install libxml-parser-perl -y
   - sudo apt-get install mm-common -y
   - sudo cpanm XML::XPath
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get update -qq
+#  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+#  - sudo apt-get update -qq
 #  - sudo apt-get install gcc-5 g++-5 -y
 
 compiler:
