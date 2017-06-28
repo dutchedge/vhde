@@ -20,12 +20,14 @@
 
 #include "vhdl_component.h"
 #include "vhdl_instance.h"
+#include "vhdl_port.h"
+#include "vhdl_signal.h"
 
 /*
  * Public methods
  */
 
-VHDLInstance::VHDLInstance(Glib::ustring name, VHDLComponent *pComponent):
+VHDLInstance::VHDLInstance(const Glib::ustring &name, VHDLComponent *pComponent):
   m_name(name),
   m_pComponent(pComponent)
 {
@@ -38,6 +40,8 @@ VHDLInstance::~VHDLInstance()
 void VHDLInstance::connectSignalToPort(VHDLSignal *pSignal, VHDLPort *pPort)
 {
   MapEntry mapEntry;
+  g_assert(pSignal != nullptr);
+  g_assert(pPort != nullptr);
   mapEntry.onPortRemovedConnection = pPort->removed.connect(sigc::mem_fun(this, &VHDLInstance::onPortRemoved));
   mapEntry.onSignalRemovedConnection = pSignal->removed.connect(sigc::bind<VHDLPort *>(sigc::mem_fun(this, &VHDLInstance::onSignalRemoved), pPort));
   mapEntry.pSignal = pSignal;
@@ -79,27 +83,44 @@ void VHDLInstance::disconnectSignal(VHDLSignal *pSignal)
 }
 #endif
 
-bool VHDLInstance::write(FILE *pFile, int indent)
+bool VHDLInstance::write(std::ostream &outStream, int indent)
 {
-  std::list<VHDLPort *>::const_iterator pit;
-  const std::list<VHDLPort *> *pPorts = m_pComponent->getPortList();
+  auto ports = m_pComponent->getPortList();
   std::map<VHDLPort *, MapEntry>::const_iterator mit;
+  Glib::ustring indentString(indent, ' ');
 
-  fprintf(pFile, "%*s%s: %s\n"
-                 "%*sport map (\n", indent, "", m_name.c_str(), m_pComponent->getName().c_str(),
-                                    indent, "");
+  outStream << indentString << m_name << ": " << m_pComponent->getName() << "\n"
+            << indentString << "port map (\n";
 
-  for(pit = pPorts->begin(); pit != pPorts->end(); pit++)
+  for(auto pit = ports.begin(); pit != ports.end(); pit++)
   {
     mit = m_portMap.find(*pit);
-    fprintf(pFile, "%s%*s%s => %s", (pit == pPorts->begin()) ? "" : ",\n", indent + 2, "",
-                                    (*pit)->getName().c_str(),
-                                    (mit == m_portMap.end()) ? "open" : mit->second.pSignal->getName().c_str());
+    if(pit != ports.begin()) outStream << ",\n";
+    outStream << indentString << "  " << (*pit)->getName() << " => ";
+    if(mit == m_portMap.end())
+    {
+      outStream << "open";
+    }
+    else
+    {
+      outStream << mit->second.pSignal->getName();
+    }
   }
 
-  fprintf(pFile, "\n%*s);\n", indent, "");
+  outStream << "\n" << indentString << ");\n";
 
   return true;
+}
+
+std::vector<std::pair<VHDLPort *, VHDLSignal *>> VHDLInstance::getPortsAndSignals()
+{
+  std::vector<std::pair<VHDLPort *, VHDLSignal *>> portsAndSignals;
+
+  for(auto &kv: m_portMap)
+  {
+    portsAndSignals.push_back(std::make_pair(kv.first, kv.second.pSignal));
+  }
+  return portsAndSignals;
 }
 
 /*

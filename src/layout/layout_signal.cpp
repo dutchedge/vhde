@@ -20,6 +20,8 @@
 
 #include <stdio.h>
 
+#include "i_named_item.h"
+#include "layout_port.h"
 #include "layout_signal.h"
 
 #define ENDPOINT_TO_ENDPOINTID(pEndpoint) ((pEndPoint == &m_beginning) ? BEGINNING : END)
@@ -40,6 +42,38 @@ LayoutSignal::LayoutSignal():
   m_endPoints[END].connected = false;
 }
 
+LayoutSignal::~LayoutSignal()
+{
+  m_endPoints[BEGINNING].onInstanceMovedConnection.disconnect();
+  m_endPoints[BEGINNING].onInstanceResizedConnection.disconnect();
+  m_endPoints[BEGINNING].onPortMovedConnection.disconnect();
+  m_endPoints[BEGINNING].onPortRemovedConnection.disconnect();
+
+  m_endPoints[END].onInstanceMovedConnection.disconnect();
+  m_endPoints[END].onInstanceResizedConnection.disconnect();
+  m_endPoints[END].onPortMovedConnection.disconnect();
+  m_endPoints[END].onPortRemovedConnection.disconnect();
+}
+
+void LayoutSignal::init_connect(LayoutInstance *pInstance, Edge edge, int position)
+{
+  EndPointId endPoint;
+  if(!m_endPoints[BEGINNING].connected)
+  {
+    endPoint = BEGINNING;
+  }
+  else if(!m_endPoints[END].connected)
+  {
+    endPoint = END;
+  }
+  else
+  {
+    g_assert_not_reached();
+  }
+
+  connect(endPoint, pInstance, edge, position);
+}
+
 void LayoutSignal::associateSignal(INamedItem *pSignal)
 {
   g_assert(m_pSignal == NULL);
@@ -57,25 +91,25 @@ signal "mysignal" {
   }
 }
 */
-void LayoutSignal::write(FILE *pFile)
+void LayoutSignal::write(std::ostream &stream, int indent)
 {
   std::list<LayoutPosition>::iterator it;
+  Glib::ustring indentString(indent, ' ');
 
-  fprintf(pFile, "signal \"%s\" {\n", m_pSignal->getName().c_str());
-  fprintf(pFile, "  from ");
-  writeEndPoint(pFile, m_endPoints[BEGINNING]);
-  fprintf(pFile, "  to   ");
-  writeEndPoint(pFile, m_endPoints[END]);
-  fprintf(pFile, "  corners {\n");
+  stream << indentString << "signal \"" << m_pSignal->getName() << "\" {\n"
+         << indentString << "  from ";
+  writeEndPoint(stream, m_endPoints[BEGINNING]);
+  stream << indentString << "  to   ";
+  writeEndPoint(stream, m_endPoints[END]);
+  stream << indentString << "  corners {\n";
 
   for(it = m_corners.begin(); it != m_corners.end(); it++)
   {
-    fprintf(pFile, "    %d %d\n", it->x, it->y);
+    stream << indentString << "    " << it->x << " " << it->y << "\n";
   }
 
-  fprintf(pFile, "  }\n"
-                 "}\n"
-                 "\n");
+  stream << indentString << "  }\n"
+         << indentString << "}\n";
 }
 
 void LayoutSignal::connect(EndPointId endPointId, LayoutInstance *pLayoutInstance, Edge edge, int position)
@@ -111,26 +145,22 @@ const std::list<LayoutPosition> *LayoutSignal::getCorners()
  * Private methods
  */
 
-void LayoutSignal::writeEndPoint(FILE *pFile, const EndPoint &endPoint)
+void LayoutSignal::writeEndPoint(std::ostream &stream, const EndPoint &endPoint)
 {
   if(endPoint.connected)
   {
     if(endPoint.isPort)
     {
-      fprintf(pFile, "port \"%s\" %s %d\n", endPoint.pLayoutInstance->getAssociatedVHDLInstance()->getName().c_str(),
-                                            EDGE_TO_NAME(endPoint.edge),
-                                            endPoint.position);
+      stream << "port \"" << endPoint.pLayoutInstance->getAssociatedVHDLInstance()->getName() << "\" " << EDGE_TO_NAME(endPoint.edge) << " " << endPoint.position << "\n";
     }
     else
     {
-      fprintf(pFile, "signal \"%s\" %d %d\n", endPoint.pSignal->getName().c_str(),
-                                              endPoint.x,
-                                              endPoint.y);
+      stream << "signal \"" << endPoint.pSignal->getName() << "\" " << endPoint.x << " " << endPoint.y << "\n";
     }
   }
   else
   {
-    fprintf(pFile, "unconnected\n");
+    stream << "unconnected\n";
   }
 }
 

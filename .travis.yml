@@ -28,7 +28,11 @@ before_install:
   - sudo apt-get install cpanminus -y
   - sudo apt-get install libxml-parser-perl -y
   - sudo apt-get install mm-common -y
+  - sudo apt-get install uuid -y
   - sudo cpanm XML::XPath
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get update
+  - sudo apt-get install gcc-5 g++-5 -y
 
 compiler:
   - gcc
@@ -36,7 +40,6 @@ compiler:
 
 before_script:
   - ./install-mm-common.sh
-  - export PATH="${PATH}:${HOME}/.local/bin"
   - ./install-cluttermm.sh
 #  - export PKG_CONFIG_PATH="${HOME}/.local/lib/pkgconfig:${HOME}/.local/share/pkgconfig"
 #  - export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib"

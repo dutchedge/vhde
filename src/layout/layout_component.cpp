@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 
+#include "i_named_item.h"
 #include "layout_component.h"
 #include "layout_port.h"
 
@@ -35,6 +36,8 @@ LayoutComponent::LayoutComponent()
 
 void LayoutComponent::associateEntity(INamedItem *pVHDLEntity)
 {
+  g_assert(pVHDLEntity);
+  printf("LayoutComponent(%p)::associateEntity(%p)\n", this, pVHDLEntity);
   m_pVHDLEntity = pVHDLEntity;
 }
 
@@ -46,10 +49,11 @@ INamedItem *LayoutComponent::getAssociatedVHDLEntity()
 LayoutPort *LayoutComponent::createPort(Edge edge, int position, INamedItem *pVHDLPort)
 {
   printf("LayoutComponent::createPort\n");
-  LayoutPort *pLayoutPort = new LayoutPort();
+  auto pLayoutPort = std::make_unique<LayoutPort>();
+  auto pRawLayoutPort = pLayoutPort.get();
   pLayoutPort->associateVHDLPort(pVHDLPort);
-  addPort(edge, position, pLayoutPort);
-  return pLayoutPort;
+  addPort(edge, position, std::move(pLayoutPort));
+  return pRawLayoutPort;
 }
 
 void LayoutComponent::destroyPort(Edge edge, int position)
@@ -58,12 +62,10 @@ void LayoutComponent::destroyPort(Edge edge, int position)
   printf("LayoutComponent(%p)::destroyPort(%p)\n", this, pLayoutPort);
   g_assert(pLayoutPort != NULL);
   removePort(pLayoutPort);
-  delete pLayoutPort;
 }
 
 /*
-instance "blaat" {
-  position 100 200
+component {
   size 200 300
   ports {
     LEFT 0 "dinges"
@@ -72,24 +74,23 @@ instance "blaat" {
 }
 
 */
-void LayoutComponent::write(FILE *pFile)
+void LayoutComponent::write(std::ostream &stream, int indent)
 {
-  int edge;
   std::map<int, LayoutPort *>::iterator it;
+  Glib::ustring indentString(indent, ' ');
 
-  fprintf(pFile, "component \"%s\" {\n", m_pVHDLEntity->getName().c_str());
-  fprintf(pFile, "  size %d %d\n", m_size.width, m_size.height);
-  fprintf(pFile, "  ports {\n");
+  stream << indentString << "component {\n"
+         << indentString << "  size " << m_size.width << " " << m_size.height << "\n"
+         << indentString << "  ports {\n";
 
-  for(edge = 0; edge < NR_OF_EDGES; edge++)
+  for(auto pPort: m_portOrder)
   {
-    for(it = m_ports[edge].begin(); it != m_ports[edge].end(); it++)
-    {
-      fprintf(pFile, "    %s %d \"%s\"\n", EDGE_TO_NAME(edge), it->first, it->second->getAssociatedVHDLPort()->getName().c_str());
-    }
+    auto edgeAndPosition = pPort->getLocation();
+    stream << indentString << "    \"" << pPort->getAssociatedVHDLPort()->getName() << "\" " << EDGE_TO_NAME(edgeAndPosition.first) << " " << edgeAndPosition.second << "\n";
   }
 
-  fprintf(pFile, "  }\n"
-                 "}\n"
-                 "\n");
+  stream << indentString << "  }\n"
+         << indentString << "}\n"
+         << "\n";
 }
+
