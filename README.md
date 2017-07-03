@@ -4,11 +4,11 @@
 
 ## Introduction
 
-With the VHDL Diagram Editor you can create hierarchical VHDL designs where
-only the lowest level is written as text and the others are presented in a
-diagram as graphical components that can be connected to each other.  Each
-diagram defines its inputs and outputs so it can be used as a component in
-a higher level diagram.
+With the VHDL Diagram Editor you can create hierarchical VHDL where 
+only the lowest level is written as text and the others are presented
+in a diagram as graphical components that can be connected to each other.
+Each diagram defines its inputs and outputs so it can be used as a
+component in a higher level diagram.
 
 ## Unique "selling" points
 
@@ -30,16 +30,6 @@ key improvements:
 
 ## Current status
 
-I recently picked back up development on this project. There is now [a backlog
-that lists items to be done in order of priority](docs/backlog.md). If you have
-any additional items you would like to see on this backlog or you have a
-comment on the chosen priorities, don't hesitate to contact me at
-griffon26@kfk4ever.com.
-
-Currently the GUI is mostly a demonstration of the functionality of the object
-model.  The screenshot shows an entity and a component instance, both loaded
-from disk. You can interact with them in the diagram and when you close the
-application your changes are saved back to disk.
-
-![A screenshot](/docs/images/screenshot.png?raw=true)
-
+I haven't worked on this project for a while, but if you think this program
+is interesting send me a mail at griffon26@kfk4ever.com and I'll see what I
+can do about picking up development again.

@@ -1,8 +1,0 @@
-component {
-  size 150 400
-  ports {
-    "myport1" LEFT 0
-    "myport2" RIGHT 8
-  }
-}
-

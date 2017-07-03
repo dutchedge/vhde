@@ -23,16 +23,15 @@
 
 #include <glibmm.h>
 
+#include "vhdl_generic.h"
 #include "vhdl_port.h"
-
-class VHDLFragment;
 
 class VHDLInterface
 {
 protected:
   bool                      m_init;
-  std::unique_ptr<VHDLFragment> m_pGenerics;
-  std::vector<std::unique_ptr<VHDLPort>> m_ports;
+  std::list<VHDLGeneric *>  m_generics;
+  std::list<VHDLPort *>     m_ports;
 
 public:
   /* Signals */
@@ -40,19 +39,18 @@ public:
 
   VHDLInterface();
 
-  /* These methods assume ownership of the objects passed */
-  void init_addGenerics(std::unique_ptr<VHDLFragment> pFragment);
-  void init_addPort(std::unique_ptr<VHDLPort> pPort);
+  /* This method assumes ownership of the port */
+  void init_addPort(VHDLPort *pPort);
   void init_done() { m_init = false; }
 
-  VHDLPort *findPortByName(const Glib::ustring &name);
+  VHDLPort *findPortByName(Glib::ustring name);
 
-  virtual bool write(std::ostream &outStream, int indent) = 0;
+  virtual bool write(FILE *pFile, int indent) = 0;
 
-  const std::vector<VHDLPort *> getPortList();
+  const std::list<VHDLPort *> *getPortList() { return &m_ports; }
 
 protected:
-  void addPort(std::unique_ptr<VHDLPort> pPort);
+  void addPort(VHDLPort *pPort);
   void removePort(VHDLPort *pPort);
 };
 

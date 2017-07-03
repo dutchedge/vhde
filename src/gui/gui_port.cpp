@@ -19,7 +19,6 @@
  */
 
 #include "gui_port.h"
-#include "layout_port.h"
 #include "vhdl_port.h"
 
 /*

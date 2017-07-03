@@ -23,8 +23,8 @@
 
 #include <glibmm.h>
 
-#include "layout_port.h"
 #include "layout_types.h"
+#include "layout_port.h"
 
 class LayoutBlock
 {
@@ -36,7 +36,7 @@ public:
     LayoutPort *pLayoutPort;
   } PortData;
 
-  typedef std::map<int, std::unique_ptr<LayoutPort>> PortPositionMap;
+  typedef std::map<int, LayoutPort *> PortPositionMap;
 
 protected:
   bool                        m_init;
@@ -44,21 +44,14 @@ protected:
   LayoutSize                  m_size;
   PortPositionMap             m_ports[NR_OF_EDGES];
 
-  /* This vector holds ports in the order they were added to the block and is
-   * only used to remember this order, regardless of where ports are physically
-   * located. The purpose of this is to minimize the diff between .layout files
-   * when ports are renamed or moved.
-   */
-  std::vector<LayoutPort *>   m_portOrder;
-
 public:
   /* Signals */
   sigc::signal<void, const LayoutSize &>       resized;
   sigc::signal<void, Edge, int, LayoutPort *>  port_added;
 
   /* This method assumes ownership of the port */
-  void init_addPort(Edge edge, int position, std::unique_ptr<LayoutPort> pPort);
-  void init_done();
+  void init_addPort(Edge edge, int position, LayoutPort *pPort);
+  void init_done() { m_init = false; }
 
   void getPosition(LayoutPosition *pLayoutPosition);
 
@@ -69,12 +62,12 @@ public:
   void movePort(Edge oldEdge, int oldPosition, Edge newEdge, int newPosition);
   LayoutPort *getPort(Edge edge, int position);
 
-  std::vector<PortData> getPortList();
+  std::list<PortData> *getPortList();
 
-  const std::vector<int> getPortPositions(Edge edge);
-  void setPortPositions(Edge edge, const std::vector<int> &portPositions);
+  const PortPositionMap *getPortPositionMaps();
+  void setPortPositionMaps(PortPositionMap *portPositionMap);
 
-  LayoutPort *findPortByName(const Glib::ustring &name, Edge *pEdge, int *pPosition);
+  LayoutPort *findPortByName(Glib::ustring name, Edge *pEdge, int *pPosition);
 
   bool findFreeSlotOnEdge(Edge edge, int preferredPosition, int *pFreePosition);
   bool findFreeSlot(Edge preferredEdge, int preferredPosition, Edge *pFreeEdge, int *pFreePosition);
@@ -85,8 +78,11 @@ public:
 protected:
   LayoutBlock();
 
-  void addPort(Edge edge, int position, std::unique_ptr<LayoutPort> pPort);
+  void addPort(Edge edge, int position, LayoutPort *pPort);
   void removePort(LayoutPort *pPort);
+
+private:
+  void resizeEdge(Edge edge, int newSize);
 };
 
 #endif /* _LAYOUT_BLOCK_H */

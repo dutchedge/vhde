@@ -23,7 +23,6 @@
 
 #include <glibmm.h>
 
-#include "i_named_item.h"
 #include "vhdl_interface.h"
 
 class VHDLEntity;
@@ -33,15 +32,13 @@ class VHDLComponent: public VHDLInterface, public INamedItem
 private:
   VHDLEntity *m_pEntity;
   sigc::connection m_onPortAddedConnection;
-  std::map<VHDLPort *, sigc::connection> m_onPortRemovedConnections;
-  Glib::ustring m_unresolvedName;
 
 public:
-  VHDLComponent(const Glib::ustring &entityName);
+  VHDLComponent();
   ~VHDLComponent();
 
   /* Inherited methods */
-  virtual bool write(std::ostream &outStream, int indent);
+  virtual bool write(FILE *pFile, int indent);
 
   void associateEntity(VHDLEntity *pEntity);
   VHDLEntity *getAssociatedEntity();

@@ -18,57 +18,35 @@
  *
  */
 
-#include <iostream>
-
 #include "vhdl_architecture.h"
-#include "vhdl_component.h"
-#include "vhdl_entity.h"
-#include "vhdl_instance.h"
-#include "vhdl_signal.h"
 
 /*
  * Public methods
  */
 
-VHDLArchitecture::VHDLArchitecture(const Glib::ustring &name):
+VHDLArchitecture::VHDLArchitecture(Glib::ustring name):
   m_init(true),
   m_name(name),
   m_pEntity(NULL)
 {
-  std::cout << "Creating architecture with name " << m_name << " at address " << this << std::endl;
 }
 
-VHDLArchitecture::~VHDLArchitecture()
-{
-  std::cout << "Destroying architecture with name " << m_name << " at address " << this << std::endl;
-}
-
-void VHDLArchitecture::init_addComponent(std::unique_ptr<VHDLComponent> pComponent)
+void VHDLArchitecture::init_addSignal(VHDLSignal *pSignal)
 {
   g_assert(m_init);
-  m_components.push_back(std::move(pComponent));
+  m_signals.push_back(pSignal);
 }
 
-void VHDLArchitecture::init_addSignal(std::unique_ptr<VHDLSignal> pSignal)
+void VHDLArchitecture::init_addInstance(VHDLInstance *pInstance)
 {
   g_assert(m_init);
-  m_signals.push_back(std::move(pSignal));
+  m_instances.push_back(pInstance);
 }
 
-void VHDLArchitecture::init_addInstance(std::unique_ptr<VHDLInstance> pInstance)
+void VHDLArchitecture::init_addComponent(VHDLComponent *pComponent)
 {
   g_assert(m_init);
-  m_instances.push_back(std::move(pInstance));
-}
-
-const std::vector<VHDLInstance *> VHDLArchitecture::getInstances()
-{
-  return stripOwnership(m_instances);
-}
-
-const std::vector<VHDLSignal *> VHDLArchitecture::getSignals()
-{
-  return stripOwnership(m_signals);
+  m_components.push_back(pComponent);
 }
 
 void VHDLArchitecture::setEntity(VHDLEntity *pEntity)
@@ -77,78 +55,76 @@ void VHDLArchitecture::setEntity(VHDLEntity *pEntity)
   m_pEntity = pEntity;
 }
 
-VHDLComponent *VHDLArchitecture::findComponentByName(const Glib::ustring &name)
+VHDLComponent *VHDLArchitecture::findComponentByName(Glib::ustring name)
 {
-  for(auto &pComponent: m_components)
+  std::list<VHDLComponent *>::iterator it;
+
+  for(it = m_components.begin(); it != m_components.end(); it++)
   {
-    if(pComponent->getName() == name)
+    if((*it)->getName() == name)
     {
-      return pComponent.get();
+      return *it;
     }
   }
   return NULL;
 }
 
-VHDLSignal *VHDLArchitecture::findSignalByName(const Glib::ustring &name)
+VHDLSignal *VHDLArchitecture::findSignalByName(Glib::ustring name)
 {
-  for(auto &pSignal: m_signals)
+  std::list<VHDLSignal *>::iterator it;
+
+  for(it = m_signals.begin(); it != m_signals.end(); it++)
   {
-    if(pSignal->getName() == name)
+    if((*it)->getName() == name)
     {
-      return pSignal.get();
+      return *it;
     }
   }
   return NULL;
 }
 
-VHDLInstance *VHDLArchitecture::findInstanceByName(const Glib::ustring &name)
+VHDLInstance *VHDLArchitecture::findInstanceByName(Glib::ustring name)
 {
-  for(auto &pInstance: m_instances)
+  std::list<VHDLInstance *>::iterator it;
+
+  for(it = m_instances.begin(); it != m_instances.end(); it++)
   {
-    if(pInstance->getName() == name)
+    if((*it)->getName() == name)
     {
-      return pInstance.get();
+      return *it;
     }
   }
   return NULL;
 }
 
-bool VHDLArchitecture::write(std::ostream &outStream, int indent)
+bool VHDLArchitecture::write(FILE *pFile, int indent)
 {
-  Glib::ustring indentString(indent, ' ');
+  std::list<VHDLSignal *>::iterator sit;
+  std::list<VHDLInstance *>::iterator iit;
 
-  outStream << indentString << "architecture " << m_name << " of " << m_pEntity->getName() << " is\n\n";
+  m_pEntity->write(pFile, indent);
 
-  for(auto iit = m_instances.begin(); iit != m_instances.end(); iit++)
+  fprintf(pFile, "%*sarchitecture %s of %s is\n\n", indent, "", m_name.c_str(), m_pEntity->getName().c_str());
+
+  for(iit = m_instances.begin(); iit != m_instances.end(); iit++)
   {
-    (*iit)->getComponent()->write(outStream, indent + 2);
+    (*iit)->getComponent()->write(pFile, indent + 2);
   }
 
-  for(auto sit = m_signals.begin(); sit != m_signals.end(); sit++)
+  for(sit = m_signals.begin(); sit != m_signals.end(); sit++)
   {
-    (*sit)->write(outStream, indent + 2);
+    (*sit)->write(pFile, indent + 2);
   }
-  outStream << "\n";
+  fprintf(pFile, "\n");
 
-  outStream << indentString << "begin\n";
-  for(auto iit = m_instances.begin(); iit != m_instances.end(); iit++)
+  fprintf(pFile, "%*sbegin\n", indent, "");
+  for(iit = m_instances.begin(); iit != m_instances.end(); iit++)
   {
-    (*iit)->write(outStream, indent + 2);
+    (*iit)->write(pFile, indent + 2);
   }
-  outStream << indentString << "end;\n\n";
+  fprintf(pFile, "%*send;\n\n", indent, "");
 
   return true;
-}
-
-void VHDLArchitecture::resolveEntityReferences(const std::map<const Glib::ustring, VHDLEntity *> &entityMap)
-{
-  for(auto &pComp: m_components)
-  {
-    if(!pComp->getAssociatedEntity())
-    {
-      pComp->associateEntity(entityMap.at(pComp->getName()));
-    }
-  }
 }
 
 /*

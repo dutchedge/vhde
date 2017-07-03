@@ -20,18 +20,14 @@
 
 #include "vhdl_component.h"
 #include "vhdl_entity.h"
-#include "vhdl_fragment.h"
-#include "vhdl_port.h"
 
 /*
  * Public methods
  */
 
-VHDLComponent::VHDLComponent(const Glib::ustring &entityName):
-  m_pEntity(NULL),
-  m_unresolvedName(entityName)
+VHDLComponent::VHDLComponent():
+  m_pEntity(NULL)
 {
-  printf("VHDLComponent(%p)::VHDLComponent(%s)\n", this, entityName.c_str());
 }
 
 VHDLComponent::~VHDLComponent()
@@ -39,11 +35,6 @@ VHDLComponent::~VHDLComponent()
   if(m_pEntity != NULL)
   {
     m_onPortAddedConnection.disconnect();
-  }
-
-  for(auto &kv: m_onPortRemovedConnections)
-  {
-    kv.second.disconnect();
   }
 }
 
@@ -54,54 +45,55 @@ VHDLComponent::~VHDLComponent()
   end component;
 
 */
-bool VHDLComponent::write(std::ostream &outStream, int indent)
+bool VHDLComponent::write(FILE *pFile, int indent)
 {
-  Glib::ustring indentString(indent, ' ');
+  std::list<VHDLGeneric *>::iterator git;
+  std::list<VHDLPort *>::iterator pit;
 
   g_assert(m_pEntity);
 
-  outStream << indentString << "component " << m_pEntity->getName() << "\n";
+  fprintf(pFile, "%*scomponent %s\n", indent, "", m_pEntity->getName().c_str());
 
-  if(m_pGenerics)
-  {
-    outStream << indentString << m_pGenerics->getText() << "\n";
-  }
-
-  outStream << indentString << "  port (\n";
-  for(auto pit = m_ports.begin(); pit != m_ports.end(); pit++)
+  fprintf(pFile, "%*sport (\n", indent + 2, "");
+  for(pit = m_ports.begin(); pit != m_ports.end(); pit++)
   {
     if(pit != m_ports.begin())
     {
-      outStream << ";\n";
+      fprintf(pFile, ";\n");
     }
-    (*pit)->write(outStream, indent + 4);
+    (*pit)->write(pFile, indent + 4);
   }
-  outStream << "\n" << indentString << "  );\n";
+  fprintf(pFile, "\n%*s);\n", indent + 2, "");
 
-  outStream << indentString << "end component;\n\n";
+  fprintf(pFile, "%*send component;\n\n", indent, "");
 
   return true;
 }
 
 void VHDLComponent::associateEntity(VHDLEntity *pEntity)
 {
+  const std::list<VHDLPort *> *pPortList;
+  std::list<VHDLPort *>::const_iterator it;
+
   g_assert(!m_init);
   g_assert(m_pEntity == NULL);
   m_pEntity = pEntity;
 
-  g_assert(m_unresolvedName == m_pEntity->getName());
+  pPortList = m_pEntity->getPortList();
+  g_assert(pPortList->size() == m_ports.size());
 
-  auto portList = m_pEntity->getPortList();
-  g_assert(portList.size() == m_ports.size());
-
-  for(auto it = portList.begin(); it != portList.end(); it++)
+  for(it = pPortList->begin(); it != pPortList->end(); it++)
   {
     VHDLPort *pOurPort = findPortByName((*it)->getName());
 
     /* Surely there's a matching port in this component */
     g_assert(pOurPort != NULL);
 
-    m_onPortRemovedConnections[pOurPort] = (*it)->removed.connect(sigc::bind<VHDLPort *>(sigc::mem_fun(this, &VHDLComponent::onPortRemoved), pOurPort));
+    /* No need to remember the connection for "removed" signals, because the
+     * only reason we would no longer want to receive them is when the
+     * corresponding port is destroyed (so it won't emit any further signals).
+     */
+    (*it)->removed.connect(sigc::bind<VHDLPort *>(sigc::mem_fun(this, &VHDLComponent::onPortRemoved), pOurPort));
   }
 
   m_onPortAddedConnection = m_pEntity->port_added.connect(sigc::mem_fun(this, &VHDLComponent::onPortAdded));
@@ -114,15 +106,8 @@ VHDLEntity *VHDLComponent::getAssociatedEntity()
 
 const Glib::ustring &VHDLComponent::getName()
 {
-  if(!m_init)
-  {
-    return m_unresolvedName;
-  }
-  else
-  {
-    g_assert(m_pEntity);
-    return m_pEntity->getName();
-  }
+  g_assert(m_pEntity);
+  return m_pEntity->getName();
 }
 
 /*
@@ -132,15 +117,15 @@ const Glib::ustring &VHDLComponent::getName()
 void VHDLComponent::onPortAdded(VHDLPort *pEntityPort)
 {
   printf("VHDLComponent::onPortAdded\n");
-  auto pOurPort = std::make_unique<VHDLPort>(*pEntityPort);
+  VHDLPort *pOurPort = new VHDLPort(*pEntityPort);
 
-  m_onPortRemovedConnections[pOurPort.get()] = pEntityPort->removed.connect(sigc::bind<VHDLPort *>(sigc::mem_fun(this, &VHDLComponent::onPortRemoved), pOurPort.get()));
-  addPort(std::move(pOurPort));
+  pEntityPort->removed.connect(sigc::bind<VHDLPort *>(sigc::mem_fun(this, &VHDLComponent::onPortRemoved), pOurPort));
+  addPort(pOurPort);
 }
 
 void VHDLComponent::onPortRemoved(VHDLPort *pEntityPort, VHDLPort *pOurPort)
 {
   printf("VHDLComponent(%p)::onPortRemoved(%s(%p))\n", this, pOurPort->getName().c_str(), pOurPort);
-  m_onPortRemovedConnections.erase(pOurPort);
   removePort(pOurPort);
+  delete pOurPort;
 }

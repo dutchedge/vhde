@@ -38,17 +38,16 @@ private:
 public:
   sigc::signal<void, VHDLPort *> removed;
 
-  VHDLPort(const Glib::ustring &name);
+  VHDLPort(Glib::ustring name);
   virtual ~VHDLPort();
 
   void setDirection(Direction dir);
-  void setType(const VHDLType &type);
+  void setType(VHDLType type);
 
-  bool write(std::ostream &outStream, int indent);
+  bool write(FILE *pFile, int indent);
 
   const Glib::ustring   &getName()       { return m_name; }
   const Direction       getDirection()  { return m_direction; }
 };
 
-#endif /* _VHDL_PORT_H */
-
+#endif /* _VHDL_WIRE_H */

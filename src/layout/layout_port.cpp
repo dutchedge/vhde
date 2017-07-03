@@ -20,7 +20,6 @@
 
 #include <stdio.h>
 
-#include "i_named_item.h"
 #include "layout_port.h"
 
 /*
@@ -28,9 +27,7 @@
  */
 
 LayoutPort::LayoutPort():
-  m_pPort(NULL),
-  m_edge(EDGE_LEFT),
-  m_position(0)
+  m_pPort(NULL)
 {
 }
 
@@ -43,7 +40,6 @@ LayoutPort::~LayoutPort()
 void LayoutPort::associateVHDLPort(INamedItem *pPort)
 {
   g_assert(m_pPort == NULL);
-  g_assert(pPort != NULL);
   m_pPort = pPort;
 }
 
@@ -53,15 +49,9 @@ INamedItem *LayoutPort::getAssociatedVHDLPort()
   return m_pPort;
 }
 
-const Glib::ustring &LayoutPort::getName()
+Glib::ustring LayoutPort::getName()
 {
-  g_assert(m_pPort != NULL);
   return m_pPort->getName();
-}
-
-std::pair<Edge, int> LayoutPort::getLocation()
-{
-  return std::make_pair(m_edge, m_position);
 }
 
 /*
@@ -77,5 +67,3 @@ void LayoutPort::setLocation(Edge edge, int position)
     moved.emit(edge, position, this);
   }
 }
-
-

@@ -19,26 +19,14 @@
  */
 
 #include "vhdl_entity.h"
-#include "vhdl_fragment.h"
-#include "vhdl_port.h"
 
-VHDLEntity::VHDLEntity(const Glib::ustring &name):
-  m_name(name),
-  m_pDeclarativePart(nullptr)
+VHDLEntity::VHDLEntity(Glib::ustring name):
+  m_name(name)
 {
-  printf("VHDLEntity(%p)::VHDLEntity(%s)\n", this, name.c_str());
 
 }
 
-void VHDLEntity::init_setDeclarativePart(std::unique_ptr<VHDLFragment> pFragment)
-{
-  g_assert(m_init);
-  g_assert(!m_pDeclarativePart);
-  g_assert(pFragment);
-  m_pDeclarativePart = std::move(pFragment);
-}
-
-void VHDLEntity::setName(const Glib::ustring &name)
+void VHDLEntity::setName(Glib::ustring name)
 {
   m_name = name;
   name_changed.emit(name);
@@ -53,18 +41,17 @@ const Glib::ustring &VHDLEntity::getName()
 VHDLPort *VHDLEntity::createPort(Direction dir, const Glib::ustring &name)
 {
   printf("VHDLEntity::createPort(%s, %s)\n", DIR_TO_NAME(dir), name.c_str());
-  auto pVHDLPort = std::make_unique<VHDLPort>(name);
-  auto pRawVHDLPort = pVHDLPort.get();
+  VHDLPort *pVHDLPort = new VHDLPort(name);
   pVHDLPort->setDirection(dir);
-  pVHDLPort->setType(VHDLType("std_logic"));
-  addPort(std::move(pVHDLPort));
-  return pRawVHDLPort;
+  addPort(pVHDLPort);
+  return pVHDLPort;
 }
 
 void VHDLEntity::destroyPort(VHDLPort *pPort)
 {
   printf("VHDLEntity(%p)::destroyPort(%s)\n", this, pPort->getName().c_str());
   removePort(pPort);
+  delete pPort;
 }
 
 /*
@@ -75,37 +62,28 @@ void VHDLEntity::destroyPort(VHDLPort *pPort)
   end INV;
 
 */
-bool VHDLEntity::write(std::ostream &outStream, int indent)
+bool VHDLEntity::write(FILE *pFile, int indent)
 {
-  Glib::ustring indentString(indent, ' ');
+  std::list<VHDLGeneric *>::iterator git;
+  std::list<VHDLPort *>::iterator pit;
 
-  outStream << indentString << "entity " << m_name << " is\n";
-
-  if(m_pGenerics)
-  {
-    outStream << indentString << "  " << m_pGenerics->getText() << "\n";
-  }
+  fprintf(pFile, "%*sentity %s is\n", indent, "", m_name.c_str());
 
   if(m_ports.size() > 0)
   {
-    outStream << indentString << "  port (\n";
-    for(auto pit = m_ports.begin(); pit != m_ports.end(); pit++)
+    fprintf(pFile, "%*sport (\n", indent + 2, "");
+    for(pit = m_ports.begin(); pit != m_ports.end(); pit++)
     {
       if(pit != m_ports.begin())
       {
-        outStream << ";\n";
+        fprintf(pFile, ";\n");
       }
-      (*pit)->write(outStream, indent + 4);
+      (*pit)->write(pFile, indent + 4);
     }
-    outStream << "\n" << indentString << "  );\n";
+    fprintf(pFile, "\n%*s);\n", indent + 2, "");
   }
 
-  if(m_pDeclarativePart)
-  {
-    outStream << indentString << "  " << m_pDeclarativePart->getText() << "\n";
-  }
-
-  outStream << indentString << "end " << m_name << ";\n\n";
+  fprintf(pFile, "%*send %s;\n\n", indent, "", m_name.c_str());
 
   return true;
 }

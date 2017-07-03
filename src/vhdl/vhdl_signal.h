@@ -32,18 +32,16 @@ class VHDLSignal: public INamedItem
 private:
   Glib::ustring           m_name;
   VHDLType                m_type;
-  Glib::ustring           m_defaultValue;
 
 public:
   sigc::signal<void, VHDLSignal *> removed;
 
-  VHDLSignal(const Glib::ustring &name);
+  VHDLSignal(Glib::ustring name);
   ~VHDLSignal();
 
-  void setType(const VHDLType &type);
-  void setDefaultValue(const Glib::ustring &defaultValue);
+  void setType(VHDLType type);
 
-  bool write(std::ostream &outStream, int indent);
+  bool write(FILE *pFile, int indent);
 
   const Glib::ustring &getName() { return m_name; }
 };

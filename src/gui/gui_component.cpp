@@ -20,9 +20,7 @@
 
 #include "gui_component.h"
 #include "layout_component.h"
-#include "layout_port.h"
 #include "vhdl_entity.h"
-#include "vhdl_port.h"
 
 /*
  * Public methods

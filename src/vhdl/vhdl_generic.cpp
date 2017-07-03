@@ -18,24 +18,5 @@
  *
  */
 
-#ifndef _VHDL_FRAGMENT_H
-#define _VHDL_FRAGMENT_H
-
-#include <glibmm.h>
-
-class VHDLFragment
-{
-private:
-  Glib::ustring           m_text;
-
-public:
-  VHDLFragment(const Glib::ustring &text);
-  virtual ~VHDLFragment();
-
-  const Glib::ustring &getText();
-
-  bool write(std::ostream &outStream, int indent);
-};
-
-#endif /* _VHDL_FRAGMENT_H */
+#include "vhdl_generic.h"
 

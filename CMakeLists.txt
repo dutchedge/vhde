@@ -1,39 +1,8 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 2.8)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Debug" CACHE STRING
-       "Choose the type of build, options are: Debug Release."
-       FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
-
-set(CMAKE_C_COMPILER /usr/bin/gcc-5)
-set(CMAKE_CXX_COMPILER /usr/bin/g++-5)
 set(CMAKE_CXX_EXTENSIONS off)
 
-# -Wall only works for gcc or clang, but let's fix that when someone starts
-# complaining.
-# Also disable deprecation warnings, because there is no point in fixing them
-# when I'm planning to migrate to GSK (the successor of clutter) once it's 
-# available widely enough in Gtk.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-deprecated-declarations")
-
 project (VHDE)
-
-set(ANTLR_RUNTIME antlr4-cpp-runtime)
-get_filename_component(ANTLR_RUNTIME_PREFIX ${ANTLR_RUNTIME}-prefix ABSOLUTE)
-
-include(ExternalProject)
-set(SOURCE_SUBDIR "runtime/Cpp")
-externalproject_add(${ANTLR_RUNTIME}
-    PREFIX                ${CMAKE_SOURCE_DIR}${ANTLR_RUNTIME_PREFIX}
-    GIT_REPOSITORY        https://github.com/Griffon26/antlr4.git
-    GIT_TAG               "4.7-unique_ptr"
-    UPDATE_COMMAND        ""
-    SOURCE_DIR            ${CMAKE_SOURCE_DIR}${ANTLR_RUNTIME_PREFIX}/src/${ANTLR_RUNTIME}/runtime/Cpp
-    CMAKE_ARGS            -DCMAKE_INSTALL_PREFIX=${ANTLR_RUNTIME_PREFIX}
-                          -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    INSTALL_COMMAND       make preinstall
-)
 
 find_package(PkgConfig)
 
@@ -42,23 +11,17 @@ pkg_search_module(GTKMM REQUIRED gtkmm-3.0 gtkmm-2.4)
 
 include_directories(${CLUTTERMM_INCLUDE_DIRS}
                     ${GTKMM_INCLUDE_DIRS}
-                    ${ANTLR_RUNTIME_PREFIX}/include/antlr4-runtime
                     src/clutter
                     src/common
                     src/gui
                     src/layout
-                    src/parsers
-                    src/parsers/generated
                     src/vhdl)
 link_directories(${CLUTTERMM_LIBRARY_DIRS}
-                 ${GTKMM_LIBRARY_DIRS}
-                 ${ANTLR_RUNTIME_PREFIX}/lib)
+                 ${GTKMM_LIBRARY_DIRS})
 link_libraries(${CLUTTERMM_LIBRARIES}
-               ${GTKMM_LIBRARIES}
-               ${ANTLR_RUNTIME_PREFIX}/lib/libantlr4-runtime.so)
+               ${GTKMM_LIBRARIES})
 
 set(SRCS src/main.cpp
-         src/project.cpp
          src/clutter/clutter_block.cpp
          src/clutter/clutter_port.cpp
          src/clutter/clutter_scaling_text.cpp
@@ -68,24 +31,15 @@ set(SRCS src/main.cpp
          src/gui/gui_instance.cpp
          src/gui/gui_port.cpp
          src/gui/gui_signal.cpp
-         src/layout/layout_architecture.cpp
          src/layout/layout_block.cpp
          src/layout/layout_component.cpp
-         src/layout/layout_file.cpp
          src/layout/layout_instance.cpp
          src/layout/layout_port.cpp
          src/layout/layout_signal.cpp
-         src/parsers/generated/vhdlBaseVisitor.cpp
-         src/parsers/generated/vhdlLexer.cpp
-         src/parsers/generated/vhdlParser.cpp
-         src/parsers/generated/vhdlVisitor.cpp
-         src/parsers/parse_layout.cpp
-         src/parsers/parse_vhdl.cpp
          src/vhdl/vhdl_architecture.cpp
          src/vhdl/vhdl_component.cpp
          src/vhdl/vhdl_entity.cpp
-         src/vhdl/vhdl_file.cpp
-         src/vhdl/vhdl_fragment.cpp
+         src/vhdl/vhdl_generic.cpp
          src/vhdl/vhdl_instance.cpp
          src/vhdl/vhdl_interface.cpp
          src/vhdl/vhdl_port.cpp
@@ -94,11 +48,6 @@ set(SRCS src/main.cpp
 
 add_executable(vhde ${SRCS})
 
-target_compile_features(vhde PRIVATE cxx_generic_lambdas
-                                     cxx_noexcept
-                                     cxx_override
-                                     cxx_range_for
-                       )
-
-add_dependencies(vhde ${ANTLR_RUNTIME})
+target_compile_features(vhde PRIVATE cxx_noexcept
+                                     cxx_override)
 
