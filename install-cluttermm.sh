@@ -17,7 +17,7 @@ mkdir -p "${INSTALLDIR}"
 
 pushd "${SRCDIR}" > /dev/null
 
-ACLOCAL_FLAGS="-I ${INSTALLDIR}/share/aclocal" ./autogen.sh --prefix="${INSTALLDIR}" --disable-documentation
+PATH="${PATH}:${INSTALLDIR}/bin" ACLOCAL_FLAGS="-I ${INSTALLDIR}/share/aclocal" ./autogen.sh --prefix="${INSTALLDIR}" --disable-documentation
 set +e
 make
 sed -i "0,/Texture_Class/s//Texture_Class1/" clutter/cluttermm/wrap_init.cc
@@ -26,4 +26,13 @@ make
 make install
 
 popd > /dev/null
+
+set +x
+echo "------------------------------------------------------------------------------------------------"
+echo "Don't forget to add the following settings to your environment before building and running VHDE:"
+echo ""
+echo "  export PKG_CONFIG_PATH=\"${INSTALLDIR}/lib/pkgconfig:${INSTALLDIR}/share/pkgconfig\""
+echo "  export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}:${INSTALLDIR}/lib\""
+echo ""
+echo "------------------------------------------------------------------------------------------------"
 
